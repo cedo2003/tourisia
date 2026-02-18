@@ -141,7 +141,7 @@ export default function LoginPage() {
                 htmlFor="email"
                 className="block text-sm font-medium text-foreground"
               >
-                Email Address
+                Adresse Email
               </label>
               <input
                 id="email"
@@ -149,7 +149,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
+                placeholder="tourisia@gmail.com"
                 className="mt-1.5 w-full rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-[#2563eb] focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20"
               />
             </div>
@@ -160,13 +160,13 @@ export default function LoginPage() {
                   htmlFor="password"
                   className="block text-sm font-medium text-foreground"
                 >
-                  Password
+                  Mot de passe
                 </label>
                 <a
                   href="#"
                   className="text-xs font-medium text-[#2563eb] hover:text-[#1d4ed8]"
                 >
-                  Forgot password?
+                  Mot de passe oublié ?
                 </a>
               </div>
               <div className="relative mt-1.5">
@@ -176,7 +176,7 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder="Entrer votre mot de passe"
                   className="w-full rounded-lg border border-border bg-card px-4 py-2.5 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:border-[#2563eb] focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20"
                 />
                 <button
@@ -217,7 +217,7 @@ export default function LoginPage() {
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               ) : (
                 <>
-                  Sign In
+                  Se Connecter
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}
