@@ -225,12 +225,12 @@ export default function LoginPage() {
           </form>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            {"Don't have an account?"}{" "}
+            {"Vous n'avez pas de compte ? "}{" "}
             <Link
               href="/register"
               className="font-semibold text-[#2563eb] hover:text-[#1d4ed8]"
             >
-              Create one
+              Créez-en un
             </Link>
           </p>
         </div>
