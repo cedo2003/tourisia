@@ -15,6 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 try {
     require_once '../config/database.php';
+    require_once '../utils/email_helper.php';
 
     // Sélectionner la base de données
     $pdo->exec("USE tourisia");
@@ -52,6 +53,7 @@ try {
         $stmt->bindParam(':password', $password_hash);
 
         if ($stmt->execute()) {
+            sendWelcomeEmail($email, $fullname);
             http_response_code(201);
             echo json_encode(["message" => "Utilisateur créé avec succès."]);
         } else {

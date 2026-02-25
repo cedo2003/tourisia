@@ -18,6 +18,7 @@ $GOOGLE_CLIENT_ID = "1064867979845-f1f4re147ugosa4c0i7vukshfq5doi4s.apps.googleu
 
 try {
     require_once '../config/database.php';
+    require_once '../utils/email_helper.php';
     $pdo->exec("USE tourisia");
 
     $data = json_decode(file_get_contents("php://input"));
@@ -99,6 +100,9 @@ try {
         ]);
 
         $userId = $pdo->lastInsertId();
+        sendWelcomeEmail($email, $fullname);
+
+        // Récupérer le nouvel utilisateur
         $stmt = $pdo->prepare("SELECT * FROM users WHERE id = :id");
         $stmt->execute([':id' => $userId]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
