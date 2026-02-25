@@ -32,16 +32,25 @@ export const viewport: Viewport = {
   themeColor: '#2563eb',
 }
 
+import { Toaster } from "@/components/ui/sonner"
+import { GoogleOAuthProvider } from "@react-oauth/google"
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+
+  const googleClientId = "1064867979845-f1f4re147ugosa4c0i7vukshfq5doi4s.apps.googleusercontent.com";
+
   return (
     <html lang="en">
       <body className={`${inter.variable} font-sans antialiased`}>
-        {children}
-        <Analytics />
+        <GoogleOAuthProvider clientId={googleClientId}>
+          {children}
+          <Toaster richColors />
+          <Analytics />
+        </GoogleOAuthProvider>
       </body>
     </html>
   )
