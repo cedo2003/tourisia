@@ -10,21 +10,8 @@ export const metadata: Metadata = {
   description: 'Discover unique experiences and hidden gems across 130+ countries with verified global providers.',
   generator: 'v0.app',
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
+    icon: '/images/Logo-Tourisia--Principal.png',
+    apple: '/images/Logo-Tourisia--Principal.png',
   },
 }
 
