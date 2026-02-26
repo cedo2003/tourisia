@@ -18,7 +18,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/backend/auth/login.php", {
+      const response = await fetch("http://localhost:8000/auth/login.php", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -46,13 +46,16 @@ export default function LoginPage() {
   const handleGoogleSuccess = async (credentialResponse: any) => {
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:8000/backend/auth/google_auth.php", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        "http://localhost:8000/auth/google_auth.php",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ credential: credentialResponse.credential }),
         },
-        body: JSON.stringify({ credential: credentialResponse.credential }),
-      });
+      );
 
       const data = await response.json();
 
@@ -160,7 +163,6 @@ export default function LoginPage() {
               shape="rectangular"
               width="100%"
             />
-
           </div>
 
           {/* Divider */}

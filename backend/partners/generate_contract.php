@@ -70,14 +70,24 @@ try {
         </section>
 
         <section style='margin-top: 60px;'>
-            <div style='display: flex; justify-content: space-between;'>
-                <div style='width: 45%; border-top: 1px solid #000; padding-top: 10px;'>
-                    <p>Signature TOURISIA</p>
-                    <p style='font-size: 10px; color: #999;'>(Cachet et Signature)</p>
+            <div style='display: flex; justify-content: space-between; align-items: flex-end;'>
+                <div style='width: 45%; text-align: center;'>
+                    <div style='height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;'>
+                        <img src='http://localhost:8000/uploads/signatures/tourisia_default.png' style='max-height: 80px; max-width: 150px;' alt='Tourisia Signature'>
+                    </div>
+                    <div style='border-top: 1px solid #000; padding-top: 10px;'>
+                        <p style='margin: 0; font-weight: bold;'>Signature TOURISIA</p>
+                        <p style='font-size: 10px; color: #999; margin: 0;'>(Cachet et Signature)</p>
+                    </div>
                 </div>
-                <div style='width: 45%; border-top: 1px solid #000; padding-top: 10px;'>
-                    <p>Signature Partenaire ({$partner['business_name']})</p>
-                    <p style='font-size: 10px; color: #999;'>(Cachet et Signature)</p>
+                <div style='width: 45%; text-align: center;'>
+                    <div style='height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;'>
+                        " . ($partner['signature'] ? "<img src='http://localhost:8000/{$partner['signature']}' style='max-height: 80px; max-width: 150px;' alt='Partner Signature'>" : "<div style='height: 80px;'></div>") . "
+                    </div>
+                    <div style='border-top: 1px solid #000; padding-top: 10px;'>
+                        <p style='margin: 0; font-weight: bold;'>Signature Partenaire</p>
+                        <p style='font-size: 10px; color: #999; margin: 0;'>(Cachet et Signature)</p>
+                    </div>
                 </div>
             </div>
         </section>

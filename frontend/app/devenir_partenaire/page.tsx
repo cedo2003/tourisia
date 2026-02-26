@@ -26,7 +26,7 @@ import {
   Wallet,
   Loader2,
   X,
-  Upload
+  Upload,
 } from "lucide-react";
 
 // --- Data Constants ---
@@ -41,21 +41,39 @@ const plans = [
   {
     name: "Débutant",
     price: "Gratuit",
-    features: ["Jusqu’à 3 annonces", "Statistiques de base", "Support standard", "Messagerie avec voyageurs", "Paiements sécurisés"],
+    features: [
+      "Jusqu’à 3 annonces",
+      "Statistiques de base",
+      "Support standard",
+      "Messagerie avec voyageurs",
+      "Paiements sécurisés",
+    ],
     cta: "Commencer maintenant",
     highlighted: false,
   },
   {
     name: "Professionnel",
     price: "29 $",
-    features: ["Annonces illimitées", "Statistiques avancées", "Support prioritaire", "Mise en avant premium", "Outils promotionnels"],
+    features: [
+      "Annonces illimitées",
+      "Statistiques avancées",
+      "Support prioritaire",
+      "Mise en avant premium",
+      "Outils promotionnels",
+    ],
     cta: "Commencer maintenant",
     highlighted: true,
   },
   {
     name: "Entreprise",
     price: "99 $",
-    features: ["Gestionnaire dédié", "Accès API", "White-label", "Gestion d’équipe", "Importation en masse"],
+    features: [
+      "Gestionnaire dédié",
+      "Accès API",
+      "White-label",
+      "Gestion d’équipe",
+      "Importation en masse",
+    ],
     cta: "Commencer maintenant",
     highlighted: false,
   },
@@ -70,9 +88,12 @@ function SuccessModal({ onClose }: { onClose: () => void }) {
         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
           <Check className="h-10 w-10" />
         </div>
-        <h2 className="text-2xl font-bold text-foreground">Demande envoyée !</h2>
+        <h2 className="text-2xl font-bold text-foreground">
+          Demande envoyée !
+        </h2>
         <p className="mt-4 text-muted-foreground leading-relaxed">
-          Votre demande de compte partenaire a été reçue avec succès. Notre équipe va l'étudier et vous recevrez une réponse sous 24h.
+          Votre demande de compte partenaire a été reçue avec succès. Notre
+          équipe va l'étudier et vous recevrez une réponse sous 24h.
         </p>
         <button
           onClick={onClose}
@@ -128,7 +149,7 @@ export default function BecomeProviderPage() {
     is_vat_applicable: false,
     vat_rate: "18",
     billing_address: "",
-    selected_plan: "Débutant"
+    selected_plan: "Débutant",
   });
 
   useEffect(() => {
@@ -147,25 +168,38 @@ export default function BecomeProviderPage() {
   };
 
   const updateField = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
+  const handleFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: string,
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const upData = new FormData();
-    upData.append('file', file);
-    upData.append('type', type);
+    upData.append("file", file);
+    upData.append("type", type);
 
     try {
-      const res = await fetch("http://localhost:8000/backend/partners/upload_docs.php", {
-        method: "POST",
-        body: upData
-      });
+      const res = await fetch(
+        "http://localhost:8000/partners/upload_docs.php",
+        {
+          method: "POST",
+          body: upData,
+        },
+      );
       const data = await res.json();
       if (res.ok) {
-        updateField(type === 'logo' ? 'logo' : (type === 'rccm' ? 'identity_document' : 'existence_certificate'), data.path);
+        updateField(
+          type === "logo"
+            ? "logo"
+            : type === "rccm"
+              ? "identity_document"
+              : "existence_certificate",
+          data.path,
+        );
         toast.success("Fichier téléchargé !");
       } else {
         toast.error(data.message);
@@ -179,13 +213,16 @@ export default function BecomeProviderPage() {
     setIsLoading(true);
     try {
       // Simulation chargement 5s comme demandé
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await new Promise((resolve) => setTimeout(resolve, 5000));
 
-      const res = await fetch("http://localhost:8000/backend/partners/register_partner.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, user_id: currentUser.id })
-      });
+      const res = await fetch(
+        "http://localhost:8000/partners/register_partner.php",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...formData, user_id: currentUser.id }),
+        },
+      );
 
       if (res.ok) {
         setShowSuccess(true);
@@ -200,7 +237,8 @@ export default function BecomeProviderPage() {
     }
   };
 
-  if (showSuccess) return <SuccessModal onClose={() => window.location.href = "/"} />;
+  if (showSuccess)
+    return <SuccessModal onClose={() => (window.location.href = "/")} />;
 
   return (
     <div className="min-h-screen bg-background">
@@ -211,17 +249,30 @@ export default function BecomeProviderPage() {
             {/* --- Landing Page Content --- */}
             <section className="relative overflow-hidden">
               <div className="absolute inset-0">
-                <Image src="/images/provider-hero.png" alt="Hero" fill className="object-cover" priority />
+                <Image
+                  src="/images/provider-hero.png"
+                  alt="Hero"
+                  fill
+                  className="object-cover"
+                  priority
+                />
                 <div className="absolute inset-0 bg-gradient-to-r from-foreground/90 via-foreground/70 to-foreground/40" />
               </div>
               <div className="relative mx-auto max-w-7xl px-4 py-24 lg:px-8 lg:py-36">
                 <div className="max-w-2xl">
-                  <h1 className="text-4xl font-bold text-white sm:text-6xl text-balance">Développez votre activité touristique</h1>
+                  <h1 className="text-4xl font-bold text-white sm:text-6xl text-balance">
+                    Développez votre activité touristique
+                  </h1>
                   <p className="mt-6 max-w-lg bg-white/10 backdrop-blur-md text-white leading-relaxed p-6 rounded-2xl border border-white/20">
-                    Rejoignez Tourisia et proposez vos services à des millions de voyageurs. Plusieurs plans adaptés à votre croissance.
+                    Rejoignez Tourisia et proposez vos services à des millions
+                    de voyageurs. Plusieurs plans adaptés à votre croissance.
                   </p>
-                  <button onClick={() => handleStart("Débutant")} className="mt-8 flex items-center gap-2 rounded-xl bg-[#2563eb] px-8 py-4 text-sm font-bold text-white hover:bg-[#1d4ed8] shadow-lg shadow-[#2563eb]/30">
-                    Commencer à publier maintenant <ArrowRight className="h-4 w-4" />
+                  <button
+                    onClick={() => handleStart("Débutant")}
+                    className="mt-8 flex items-center gap-2 rounded-xl bg-[#2563eb] px-8 py-4 text-sm font-bold text-white hover:bg-[#1d4ed8] shadow-lg shadow-[#2563eb]/30"
+                  >
+                    Commencer à publier maintenant{" "}
+                    <ArrowRight className="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -233,17 +284,28 @@ export default function BecomeProviderPage() {
               </div>
               <div className="grid gap-8 lg:grid-cols-3">
                 {plans.map((plan, i) => (
-                  <div key={i} className={`rounded-3xl border p-8 flex flex-col ${plan.highlighted ? "border-[#2563eb] ring-2 ring-[#2563eb]/20 shadow-xl" : "border-border bg-card"}`}>
+                  <div
+                    key={i}
+                    className={`rounded-3xl border p-8 flex flex-col ${plan.highlighted ? "border-[#2563eb] ring-2 ring-[#2563eb]/20 shadow-xl" : "border-border bg-card"}`}
+                  >
                     <h3 className="text-xl font-bold">{plan.name}</h3>
-                    <div className="mt-4 text-3xl font-bold text-[#2563eb]">{plan.price}</div>
+                    <div className="mt-4 text-3xl font-bold text-[#2563eb]">
+                      {plan.price}
+                    </div>
                     <ul className="mt-6 space-y-3 flex-1">
                       {plan.features.map((f, j) => (
-                        <li key={j} className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <li
+                          key={j}
+                          className="flex items-center gap-3 text-sm text-muted-foreground"
+                        >
                           <Check className="h-4 w-4 text-[#2563eb]" /> {f}
                         </li>
                       ))}
                     </ul>
-                    <button onClick={() => handleStart(plan.name)} className={`mt-8 w-full rounded-xl py-3 text-sm font-bold transition-all ${plan.highlighted ? "bg-[#2563eb] text-white" : "bg-muted text-foreground hover:bg-border"}`}>
+                    <button
+                      onClick={() => handleStart(plan.name)}
+                      className={`mt-8 w-full rounded-xl py-3 text-sm font-bold transition-all ${plan.highlighted ? "bg-[#2563eb] text-white" : "bg-muted text-foreground hover:bg-border"}`}
+                    >
                       {plan.cta}
                     </button>
                   </div>
@@ -257,15 +319,26 @@ export default function BecomeProviderPage() {
             <div className="mb-12">
               <div className="flex items-center justify-between mb-8">
                 <h1 className="text-2xl font-bold">Inscription Partenaire</h1>
-                <button onClick={() => setIsFormOpen(false)} className="rounded-full p-2 hover:bg-muted text-muted-foreground"><X className="h-5 w-5" /></button>
+                <button
+                  onClick={() => setIsFormOpen(false)}
+                  className="rounded-full p-2 hover:bg-muted text-muted-foreground"
+                >
+                  <X className="h-5 w-5" />
+                </button>
               </div>
 
               {/* Progress Steps */}
               <div className="flex items-center gap-4">
                 {[1, 2, 3, 4].map((s) => (
                   <div key={s} className="flex-1">
-                    <div className={`h-2 rounded-full transition-all duration-500 ${step >= s ? "bg-[#2563eb]" : "bg-border"}`} />
-                    <p className={`mt-2 text-xs font-semibold ${step >= s ? "text-[#2563eb]" : "text-muted-foreground"}`}>Étape {s}</p>
+                    <div
+                      className={`h-2 rounded-full transition-all duration-500 ${step >= s ? "bg-[#2563eb]" : "bg-border"}`}
+                    />
+                    <p
+                      className={`mt-2 text-xs font-semibold ${step >= s ? "text-[#2563eb]" : "text-muted-foreground"}`}
+                    >
+                      Étape {s}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -277,9 +350,12 @@ export default function BecomeProviderPage() {
                   <div className="relative">
                     <Loader2 className="h-16 w-16 animate-spin text-[#2563eb]" />
                   </div>
-                  <p className="font-semibold text-lg">Envoi de votre demande...</p>
+                  <p className="font-semibold text-lg">
+                    Envoi de votre demande...
+                  </p>
                   <p className="text-sm text-muted-foreground text-center max-w-xs">
-                    Merci de patienter quelques secondes pendant que nous préparons votre dossier.
+                    Merci de patienter quelques secondes pendant que nous
+                    préparons votre dossier.
                   </p>
                 </div>
               ) : (
@@ -296,43 +372,117 @@ export default function BecomeProviderPage() {
 
                       <div className="grid gap-6 md:grid-cols-2">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Nom commercial</label>
-                          <input type="text" value={formData.business_name} onChange={e => updateField('business_name', e.target.value)} placeholder="Ex: Tourisia Travel" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none" />
+                          <label className="text-sm font-medium">
+                            Nom commercial
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.business_name}
+                            onChange={(e) =>
+                              updateField("business_name", e.target.value)
+                            }
+                            placeholder="Ex: Tourisia Travel"
+                            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none"
+                          />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Type d'activité</label>
-                          <select value={formData.activity_type} onChange={e => updateField('activity_type', e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-[#2563eb]/20 outline-none">
+                          <label className="text-sm font-medium">
+                            Type d'activité
+                          </label>
+                          <select
+                            value={formData.activity_type}
+                            onChange={(e) =>
+                              updateField("activity_type", e.target.value)
+                            }
+                            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-[#2563eb]/20 outline-none"
+                          >
                             <option value="hôtel">Hôtel / Hébergement</option>
-                            <option value="resto">Restaurant / Gastronomie</option>
+                            <option value="resto">
+                              Restaurant / Gastronomie
+                            </option>
                             <option value="agence">Agence de voyage</option>
                             <option value="guide">Guide touristique</option>
-                            <option value="location">Location de véhicule</option>
+                            <option value="location">
+                              Location de véhicule
+                            </option>
                           </select>
                         </div>
                         <div className="md:col-span-2 space-y-2">
-                          <label className="text-sm font-medium">Description du service</label>
-                          <textarea rows={4} value={formData.description} onChange={e => updateField('description', e.target.value)} placeholder="Présentez brièvement votre entreprise..." className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-[#2563eb]/20 outline-none" />
+                          <label className="text-sm font-medium">
+                            Description du service
+                          </label>
+                          <textarea
+                            rows={4}
+                            value={formData.description}
+                            onChange={(e) =>
+                              updateField("description", e.target.value)
+                            }
+                            placeholder="Présentez brièvement votre entreprise..."
+                            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-[#2563eb]/20 outline-none"
+                          />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Adresse complète</label>
-                          <input type="text" value={formData.address} onChange={e => updateField('address', e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-[#2563eb]/20 outline-none" />
+                          <label className="text-sm font-medium">
+                            Adresse complète
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.address}
+                            onChange={(e) =>
+                              updateField("address", e.target.value)
+                            }
+                            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-[#2563eb]/20 outline-none"
+                          />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Ville / Pays</label>
-                          <input type="text" value={formData.city} onChange={e => updateField('city', e.target.value)} placeholder="Ex: Paris, France" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-[#2563eb]/20 outline-none" />
+                          <label className="text-sm font-medium">
+                            Ville / Pays
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.city}
+                            onChange={(e) =>
+                              updateField("city", e.target.value)
+                            }
+                            placeholder="Ex: Paris, France"
+                            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-[#2563eb]/20 outline-none"
+                          />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Email professionnel</label>
-                          <input type="email" value={formData.business_email} onChange={e => updateField('business_email', e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-[#2563eb]/20 outline-none" />
+                          <label className="text-sm font-medium">
+                            Email professionnel
+                          </label>
+                          <input
+                            type="email"
+                            value={formData.business_email}
+                            onChange={(e) =>
+                              updateField("business_email", e.target.value)
+                            }
+                            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-[#2563eb]/20 outline-none"
+                          />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Téléphone pro</label>
-                          <input type="tel" value={formData.business_phone} onChange={e => updateField('business_phone', e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-[#2563eb]/20 outline-none" />
+                          <label className="text-sm font-medium">
+                            Téléphone pro
+                          </label>
+                          <input
+                            type="tel"
+                            value={formData.business_phone}
+                            onChange={(e) =>
+                              updateField("business_phone", e.target.value)
+                            }
+                            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-[#2563eb]/20 outline-none"
+                          />
                         </div>
                         <div className="space-y-2">
                           <label className="text-sm font-medium">Logo</label>
                           <div className="relative group overflow-hidden rounded-xl border-2 border-dashed border-border hover:border-[#2563eb]/50 transition-colors p-6 text-center">
-                            <input type="file" accept="image/*" onChange={e => handleFileUpload(e, 'logo')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleFileUpload(e, "logo")}
+                              className="absolute inset-0 opacity-0 cursor-pointer"
+                            />
                             {formData.logo ? (
                               <div className="flex items-center justify-center gap-2 text-emerald-600 font-medium">
                                 <Check className="h-4 w-4" /> Logo chargé
@@ -340,7 +490,9 @@ export default function BecomeProviderPage() {
                             ) : (
                               <div className="flex flex-col items-center gap-2">
                                 <Upload className="h-6 w-6 text-muted-foreground" />
-                                <span className="text-xs text-muted-foreground">PNG, JPG ou SVG</span>
+                                <span className="text-xs text-muted-foreground">
+                                  PNG, JPG ou SVG
+                                </span>
                               </div>
                             )}
                           </div>
@@ -356,46 +508,104 @@ export default function BecomeProviderPage() {
                         <div className="h-10 w-10 rounded-xl bg-[#2563eb]/10 text-[#2563eb] flex items-center justify-center">
                           <FileText className="h-5 w-5" />
                         </div>
-                        <h2 className="text-xl font-bold">Informations Légales</h2>
+                        <h2 className="text-xl font-bold">
+                          Informations Légales
+                        </h2>
                       </div>
 
                       <div className="grid gap-6">
                         <div className="grid md:grid-cols-2 gap-6">
                           <div className="space-y-2">
-                            <label className="text-sm font-medium">Numéro RCCM</label>
-                            <input type="text" value={formData.rccm_number} onChange={e => updateField('rccm_number', e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-[#2563eb]/20 outline-none" />
+                            <label className="text-sm font-medium">
+                              Numéro RCCM
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.rccm_number}
+                              onChange={(e) =>
+                                updateField("rccm_number", e.target.value)
+                              }
+                              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-[#2563eb]/20 outline-none"
+                            />
                           </div>
                           <div className="space-y-2">
-                            <label className="text-sm font-medium">IFU / NIF</label>
-                            <input type="text" value={formData.ifu_number} onChange={e => updateField('ifu_number', e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-[#2563eb]/20 outline-none" />
+                            <label className="text-sm font-medium">
+                              IFU / NIF
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.ifu_number}
+                              onChange={(e) =>
+                                updateField("ifu_number", e.target.value)
+                              }
+                              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-[#2563eb]/20 outline-none"
+                            />
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Statut juridique</label>
-                          <select value={formData.legal_status} onChange={e => updateField('legal_status', e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none">
+                          <label className="text-sm font-medium">
+                            Statut juridique
+                          </label>
+                          <select
+                            value={formData.legal_status}
+                            onChange={(e) =>
+                              updateField("legal_status", e.target.value)
+                            }
+                            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none"
+                          >
                             <option value="SARL">SARL / SAS</option>
-                            <option value="individuelle">Entreprise individuelle</option>
+                            <option value="individuelle">
+                              Entreprise individuelle
+                            </option>
                             <option value="ONG">ONG / Association</option>
                           </select>
                         </div>
 
                         <div className="grid md:grid-cols-2 gap-6">
                           <div className="space-y-2">
-                            <label className="text-sm font-medium">Pièce d'identité du responsable (PDF)</label>
+                            <label className="text-sm font-medium">
+                              Pièce d'identité du responsable (PDF)
+                            </label>
                             <div className="relative rounded-xl border-2 border-dashed p-6 text-center cursor-pointer hover:bg-muted/50 transition-colors">
-                              <input type="file" accept=".pdf" onChange={e => handleFileUpload(e, 'rcc')} className="absolute inset-0 opacity-0" />
+                              <input
+                                type="file"
+                                accept=".pdf"
+                                onChange={(e) => handleFileUpload(e, "rcc")}
+                                className="absolute inset-0 opacity-0"
+                              />
                               <div className="flex flex-col items-center gap-1">
-                                {formData.identity_document ? <Check className="text-emerald-500" /> : <Upload className="h-5 w-5 text-muted-foreground" />}
-                                <span className="text-xs">{formData.identity_document ? "Cliqué" : "Choisir un PDF"}</span>
+                                {formData.identity_document ? (
+                                  <Check className="text-emerald-500" />
+                                ) : (
+                                  <Upload className="h-5 w-5 text-muted-foreground" />
+                                )}
+                                <span className="text-xs">
+                                  {formData.identity_document
+                                    ? "Cliqué"
+                                    : "Choisir un PDF"}
+                                </span>
                               </div>
                             </div>
                           </div>
                           <div className="space-y-2">
-                            <label className="text-sm font-medium">Attestation légale (PDF)</label>
+                            <label className="text-sm font-medium">
+                              Attestation légale (PDF)
+                            </label>
                             <div className="relative rounded-xl border-2 border-dashed p-6 text-center hover:bg-muted/50 transition-colors">
-                              <input type="file" accept=".pdf" onChange={e => handleFileUpload(e, 'existence')} className="absolute inset-0 opacity-0" />
+                              <input
+                                type="file"
+                                accept=".pdf"
+                                onChange={(e) =>
+                                  handleFileUpload(e, "existence")
+                                }
+                                className="absolute inset-0 opacity-0"
+                              />
                               <div className="flex flex-col items-center gap-1">
-                                {formData.existence_certificate ? <Check className="text-emerald-500" /> : <Upload className="h-5 w-5 text-muted-foreground" />}
+                                {formData.existence_certificate ? (
+                                  <Check className="text-emerald-500" />
+                                ) : (
+                                  <Upload className="h-5 w-5 text-muted-foreground" />
+                                )}
                                 <span className="text-xs">Choisir un PDF</span>
                               </div>
                             </div>
@@ -412,36 +622,87 @@ export default function BecomeProviderPage() {
                         <div className="h-10 w-10 rounded-xl bg-[#2563eb]/10 text-[#2563eb] flex items-center justify-center">
                           <User className="h-5 w-5" />
                         </div>
-                        <h2 className="text-xl font-bold">Responsable du compte</h2>
+                        <h2 className="text-xl font-bold">
+                          Responsable du compte
+                        </h2>
                       </div>
 
                       <div className="grid gap-6 md:grid-cols-2">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Nom & prénom</label>
-                          <input type="text" value={formData.manager_name} onChange={e => updateField('manager_name', e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-[#2563eb]/20 outline-none" />
+                          <label className="text-sm font-medium">
+                            Nom & prénom
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.manager_name}
+                            onChange={(e) =>
+                              updateField("manager_name", e.target.value)
+                            }
+                            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-[#2563eb]/20 outline-none"
+                          />
                         </div>
                         <div className="space-y-2">
                           <label className="text-sm font-medium">Email</label>
-                          <input type="email" value={formData.manager_email} onChange={e => updateField('manager_email', e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none" />
+                          <input
+                            type="email"
+                            value={formData.manager_email}
+                            onChange={(e) =>
+                              updateField("manager_email", e.target.value)
+                            }
+                            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none"
+                          />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Téléphone</label>
-                          <input type="tel" value={formData.manager_phone} onChange={e => updateField('manager_phone', e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none" />
+                          <label className="text-sm font-medium">
+                            Téléphone
+                          </label>
+                          <input
+                            type="tel"
+                            value={formData.manager_phone}
+                            onChange={(e) =>
+                              updateField("manager_phone", e.target.value)
+                            }
+                            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none"
+                          />
                         </div>
                         <div className="space-y-2">
                           <label className="text-sm font-medium">Rôle</label>
-                          <select value={formData.manager_role} onChange={e => updateField('manager_role', e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none">
+                          <select
+                            value={formData.manager_role}
+                            onChange={(e) =>
+                              updateField("manager_role", e.target.value)
+                            }
+                            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none"
+                          >
                             <option value="admin">Administrateur</option>
                             <option value="manager">Manager</option>
                           </select>
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Login dashboard</label>
-                          <input type="text" value={formData.manager_login} onChange={e => updateField('manager_login', e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none" />
+                          <label className="text-sm font-medium">
+                            Login dashboard
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.manager_login}
+                            onChange={(e) =>
+                              updateField("manager_login", e.target.value)
+                            }
+                            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none"
+                          />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Mot de passe</label>
-                          <input type="password" value={formData.manager_password} onChange={e => updateField('manager_password', e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none" />
+                          <label className="text-sm font-medium">
+                            Mot de passe
+                          </label>
+                          <input
+                            type="password"
+                            value={formData.manager_password}
+                            onChange={(e) =>
+                              updateField("manager_password", e.target.value)
+                            }
+                            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none"
+                          />
                         </div>
                       </div>
                     </div>
@@ -454,47 +715,117 @@ export default function BecomeProviderPage() {
                         <div className="h-10 w-10 rounded-xl bg-[#2563eb]/10 text-[#2563eb] flex items-center justify-center">
                           <Wallet className="h-5 w-5" />
                         </div>
-                        <h2 className="text-xl font-bold">Informations financières</h2>
+                        <h2 className="text-xl font-bold">
+                          Informations financières
+                        </h2>
                       </div>
 
                       <div className="grid gap-6 md:grid-cols-2">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Titulaire du compte</label>
-                          <input type="text" value={formData.account_holder} onChange={e => updateField('account_holder', e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none" />
+                          <label className="text-sm font-medium">
+                            Titulaire du compte
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.account_holder}
+                            onChange={(e) =>
+                              updateField("account_holder", e.target.value)
+                            }
+                            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none"
+                          />
                         </div>
                         <div className="space-y-2">
                           <label className="text-sm font-medium">Banque</label>
-                          <input type="text" value={formData.bank_name} onChange={e => updateField('bank_name', e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none" />
+                          <input
+                            type="text"
+                            value={formData.bank_name}
+                            onChange={(e) =>
+                              updateField("bank_name", e.target.value)
+                            }
+                            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none"
+                          />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">IBAN / RIB</label>
-                          <input type="text" value={formData.iban} onChange={e => updateField('iban', e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none" />
+                          <label className="text-sm font-medium">
+                            IBAN / RIB
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.iban}
+                            onChange={(e) =>
+                              updateField("iban", e.target.value)
+                            }
+                            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none"
+                          />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Mobile Money (Optional)</label>
-                          <input type="tel" value={formData.mobile_money_number} onChange={e => updateField('mobile_money_number', e.target.value)} placeholder="Ex: +229 97000000" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none" />
+                          <label className="text-sm font-medium">
+                            Mobile Money (Optional)
+                          </label>
+                          <input
+                            type="tel"
+                            value={formData.mobile_money_number}
+                            onChange={(e) =>
+                              updateField("mobile_money_number", e.target.value)
+                            }
+                            placeholder="Ex: +229 97000000"
+                            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none"
+                          />
                         </div>
                         <div className="space-y-2">
                           <label className="text-sm font-medium">Devise</label>
-                          <select value={formData.currency} onChange={e => updateField('currency', e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none">
+                          <select
+                            value={formData.currency}
+                            onChange={(e) =>
+                              updateField("currency", e.target.value)
+                            }
+                            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none"
+                          >
                             <option value="FCFA">CFA (XOF/XAF)</option>
                             <option value="EUR">Euro (EUR)</option>
                             <option value="USD">Dollar (USD)</option>
                           </select>
                         </div>
                         <div className="flex items-center gap-3 md:mt-8">
-                          <input type="checkbox" checked={formData.is_vat_applicable} onChange={e => updateField('is_vat_applicable', e.target.checked)} className="h-5 w-5 rounded-md border-border text-[#2563eb] focus:ring-[#2563eb]" />
-                          <label className="text-sm font-medium">Assujetti à la TVA ?</label>
+                          <input
+                            type="checkbox"
+                            checked={formData.is_vat_applicable}
+                            onChange={(e) =>
+                              updateField("is_vat_applicable", e.target.checked)
+                            }
+                            className="h-5 w-5 rounded-md border-border text-[#2563eb] focus:ring-[#2563eb]"
+                          />
+                          <label className="text-sm font-medium">
+                            Assujetti à la TVA ?
+                          </label>
                         </div>
                         {formData.is_vat_applicable && (
                           <div className="space-y-2 animate-in slide-in-from-top duration-300">
-                            <label className="text-sm font-medium">Taux TVA (%)</label>
-                            <input type="number" value={formData.vat_rate} onChange={e => updateField('vat_rate', e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none" />
+                            <label className="text-sm font-medium">
+                              Taux TVA (%)
+                            </label>
+                            <input
+                              type="number"
+                              value={formData.vat_rate}
+                              onChange={(e) =>
+                                updateField("vat_rate", e.target.value)
+                              }
+                              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none"
+                            />
                           </div>
                         )}
                         <div className="md:col-span-2 space-y-2">
-                          <label className="text-sm font-medium">Adresse de facturation</label>
-                          <textarea rows={2} value={formData.billing_address} onChange={e => updateField('billing_address', e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none" />
+                          <label className="text-sm font-medium">
+                            Adresse de facturation
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={formData.billing_address}
+                            onChange={(e) =>
+                              updateField("billing_address", e.target.value)
+                            }
+                            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none"
+                          />
                         </div>
                       </div>
                     </div>
@@ -504,7 +835,11 @@ export default function BecomeProviderPage() {
                   <div className="mt-auto pt-10 flex items-center justify-between border-t border-border mt-10">
                     <button
                       type="button"
-                      onClick={() => step === 1 ? setIsFormOpen(false) : setStep(s => s - 1)}
+                      onClick={() =>
+                        step === 1
+                          ? setIsFormOpen(false)
+                          : setStep((s) => s - 1)
+                      }
                       className="px-6 py-3 text-sm font-bold text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {step === 1 ? "Annuler" : "Précédent"}
@@ -512,7 +847,9 @@ export default function BecomeProviderPage() {
 
                     <button
                       type="button"
-                      onClick={() => step === 4 ? handleSubmit() : setStep(s => s + 1)}
+                      onClick={() =>
+                        step === 4 ? handleSubmit() : setStep((s) => s + 1)
+                      }
                       className="flex items-center gap-2 rounded-xl bg-[#2563eb] px-8 py-3.5 text-sm font-bold text-white transition-all hover:bg-[#1d4ed8] hover:shadow-lg shadow-[#2563eb]/20"
                     >
                       {step === 4 ? "Finaliser l'inscription" : "Suivant"}

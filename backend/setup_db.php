@@ -27,6 +27,7 @@ try {
         oauth_provider VARCHAR(50) DEFAULT 'email',
         oauth_id VARCHAR(255) DEFAULT NULL UNIQUE,
         role ENUM('user', 'admin') DEFAULT 'user',
+        is_active BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB";
 

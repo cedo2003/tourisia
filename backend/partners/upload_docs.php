@@ -21,7 +21,7 @@ try {
     }
 
     $file = $_FILES['file'];
-    $type = $_POST['type']; // 'logo', 'rccm', 'ifu', 'identity', 'existence'
+    $type = $_POST['type']; // 'logo', 'rccm', 'ifu', 'identity', 'existence', 'signature'
 
     // Déterminer le dossier de destination
     $uploadDir = '../uploads/partners/';
@@ -37,10 +37,10 @@ try {
     $allowedImageExt = ['jpg', 'jpeg', 'png', 'svg', 'webp'];
     $allowedDocExt = ['pdf'];
 
-    if ($type === 'logo') {
+    if ($type === 'logo' || $type === 'signature') {
         if (!in_array(strtolower($extension), $allowedImageExt)) {
             http_response_code(400);
-            echo json_encode(["message" => "Format d'image non supporté pour le logo."]);
+            echo json_encode(["message" => "Format d'image non supporté pour $type."]);
             exit();
         }
     } else {
@@ -56,7 +56,7 @@ try {
         // On retourne le chemin relatif pour la base de données
         echo json_encode([
             "message" => "Téléchargement réussi.",
-            "path" => "backend/uploads/partners/" . $fileName
+            "path" => "uploads/partners/" . $fileName
         ]);
     } else {
         http_response_code(500);

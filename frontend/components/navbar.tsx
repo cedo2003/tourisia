@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { Menu, X, User, LogOut, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -20,10 +20,17 @@ import {
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [user, setUser] = useState<{ id: string, fullname: string, role?: string } | null>(null);
+  const [user, setUser] = useState<{
+    id: string;
+    fullname: string;
+    role?: string;
+  } | null>(null);
   const [hasPartnerAccount, setHasPartnerAccount] = useState(false);
   const [showPartnerLogin, setShowPartnerLogin] = useState(false);
-  const [partnerLoginData, setPartnerLoginData] = useState({ login: "", password: "" });
+  const [partnerLoginData, setPartnerLoginData] = useState({
+    login: "",
+    password: "",
+  });
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const pathname = usePathname();
 
@@ -38,7 +45,9 @@ export function Navbar() {
 
   const checkPartnerStatus = async (userId: string) => {
     try {
-      const res = await fetch(`http://localhost:8000/backend/partners/check_partner_status.php?user_id=${userId}`);
+      const res = await fetch(
+        `http://localhost:8000/partners/check_partner_status.php?user_id=${userId}`,
+      );
       const data = await res.json();
       if (data.hasPartnerAccount) {
         setHasPartnerAccount(true);
@@ -52,11 +61,14 @@ export function Navbar() {
     e.preventDefault();
     setIsLoggingIn(true);
     try {
-      const res = await fetch("http://localhost:8000/backend/partners/partner_login.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(partnerLoginData)
-      });
+      const res = await fetch(
+        "http://localhost:8000/partners/partner_login.php",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(partnerLoginData),
+        },
+      );
       const data = await res.json();
       if (res.ok) {
         localStorage.setItem("partner_session", JSON.stringify(data.partner));
@@ -107,28 +119,31 @@ export function Navbar() {
           <div className="hidden items-center gap-8 md:flex">
             <a
               href="/"
-              className={`text-sm font-medium transition-colors hover:text-foreground ${isActive("/")
-                ? "font-bold text-foreground"
-                : "text-muted-foreground"
-                }`}
+              className={`text-sm font-medium transition-colors hover:text-foreground ${
+                isActive("/")
+                  ? "font-bold text-foreground"
+                  : "text-muted-foreground"
+              }`}
             >
               Explorer
             </a>
             <a
               href="/offers"
-              className={`text-sm font-medium transition-colors hover:text-foreground ${isActive("/offers")
-                ? "font-bold text-foreground"
-                : "text-muted-foreground"
-                }`}
+              className={`text-sm font-medium transition-colors hover:text-foreground ${
+                isActive("/offers")
+                  ? "font-bold text-foreground"
+                  : "text-muted-foreground"
+              }`}
             >
               Offres
             </a>
             <a
               href="/destinations"
-              className={`text-sm font-medium transition-colors hover:text-foreground ${isActive("/destinations")
-                ? "font-bold text-foreground"
-                : "text-muted-foreground"
-                }`}
+              className={`text-sm font-medium transition-colors hover:text-foreground ${
+                isActive("/destinations")
+                  ? "font-bold text-foreground"
+                  : "text-muted-foreground"
+              }`}
             >
               Destinations
             </a>
@@ -136,7 +151,7 @@ export function Navbar() {
 
           {/* Desktop actions */}
           <div className="hidden items-center gap-3 md:flex">
-            {user?.role === 'admin' && (
+            {user?.role === "admin" && (
               <Link
                 href="/admin"
                 className="rounded-lg border border-purple-600 text-purple-600 px-4 py-2 text-sm font-bold transition-all hover:bg-purple-600 hover:text-white"
@@ -145,8 +160,8 @@ export function Navbar() {
               </Link>
             )}
 
-            {user?.role !== 'admin' && (
-              hasPartnerAccount ? (
+            {user?.role !== "admin" &&
+              (hasPartnerAccount ? (
                 <button
                   onClick={() => {
                     if (pathname !== "/espace_partenaire") {
@@ -164,12 +179,14 @@ export function Navbar() {
                 >
                   Devenir Partenaire
                 </Link>
-              )
-            )}
+              ))}
 
             {user ? (
               <div className="flex items-center gap-4 ml-2 pl-4 border-l border-border">
-                <Link href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                >
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2563eb]/10 text-[#2563eb]">
                     <User className="h-4 w-4" />
                   </div>
@@ -210,10 +227,11 @@ export function Navbar() {
               <>
                 <Link
                   href="/login"
-                  className={`text-sm font-medium transition-colors hover:text-foreground ${isActive("/login")
-                    ? "font-bold text-foreground"
-                    : "text-muted-foreground"
-                    }`}
+                  className={`text-sm font-medium transition-colors hover:text-foreground ${
+                    isActive("/login")
+                      ? "font-bold text-foreground"
+                      : "text-muted-foreground"
+                  }`}
                 >
                   Se Connecter
                 </Link>
@@ -247,37 +265,40 @@ export function Navbar() {
             <div className="flex flex-col gap-3">
               <a
                 href="/"
-                className={`text-sm font-medium ${isActive("/")
-                  ? "font-bold text-foreground"
-                  : "text-muted-foreground"
-                  }`}
+                className={`text-sm font-medium ${
+                  isActive("/")
+                    ? "font-bold text-foreground"
+                    : "text-muted-foreground"
+                }`}
                 onClick={() => setMobileOpen(false)}
               >
                 Explorer
               </a>
               <a
                 href="/offers"
-                className={`text-sm font-medium ${isActive("/offers")
-                  ? "font-bold text-foreground"
-                  : "text-muted-foreground"
-                  }`}
+                className={`text-sm font-medium ${
+                  isActive("/offers")
+                    ? "font-bold text-foreground"
+                    : "text-muted-foreground"
+                }`}
                 onClick={() => setMobileOpen(false)}
               >
                 Offres
               </a>
               <a
                 href="/destinations"
-                className={`text-sm font-medium ${isActive("/destinations")
-                  ? "font-bold text-foreground"
-                  : "text-muted-foreground"
-                  }`}
+                className={`text-sm font-medium ${
+                  isActive("/destinations")
+                    ? "font-bold text-foreground"
+                    : "text-muted-foreground"
+                }`}
                 onClick={() => setMobileOpen(false)}
               >
                 Destinations
               </a>
               <hr className="border-border" />
 
-              {user?.role === 'admin' && (
+              {user?.role === "admin" && (
                 <Link
                   href="/admin"
                   className="rounded-lg border border-purple-600 text-purple-600 px-4 py-2 text-sm font-bold text-center"
@@ -287,8 +308,8 @@ export function Navbar() {
                 </Link>
               )}
 
-              {user?.role !== 'admin' && (
-                hasPartnerAccount ? (
+              {user?.role !== "admin" &&
+                (hasPartnerAccount ? (
                   <button
                     onClick={() => {
                       if (pathname !== "/espace_partenaire") {
@@ -308,8 +329,7 @@ export function Navbar() {
                   >
                     Devenir Partenaire
                   </Link>
-                )
-              )}
+                ))}
 
               {user ? (
                 <div className="flex flex-col gap-3 pt-2">
@@ -352,10 +372,11 @@ export function Navbar() {
                 <>
                   <Link
                     href="/login"
-                    className={`text-sm font-medium ${isActive("/login")
-                      ? "font-bold text-foreground"
-                      : "text-muted-foreground"
-                      }`}
+                    className={`text-sm font-medium ${
+                      isActive("/login")
+                        ? "font-bold text-foreground"
+                        : "text-muted-foreground"
+                    }`}
                     onClick={() => setMobileOpen(false)}
                   >
                     Se Connecter
@@ -389,23 +410,37 @@ export function Navbar() {
             </div>
             <form onSubmit={handlePartnerLogin} className="space-y-4">
               <div>
-                <label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Login Manager</label>
+                <label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">
+                  Login Manager
+                </label>
                 <input
                   type="text"
                   required
                   value={partnerLoginData.login}
-                  onChange={(e) => setPartnerLoginData({ ...partnerLoginData, login: e.target.value })}
+                  onChange={(e) =>
+                    setPartnerLoginData({
+                      ...partnerLoginData,
+                      login: e.target.value,
+                    })
+                  }
                   className="w-full rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm focus:ring-2 focus:ring-[#2563eb]/20 outline-none"
                   placeholder="Manager ID"
                 />
               </div>
               <div>
-                <label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Mot de passe</label>
+                <label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">
+                  Mot de passe
+                </label>
                 <input
                   type="password"
                   required
                   value={partnerLoginData.password}
-                  onChange={(e) => setPartnerLoginData({ ...partnerLoginData, password: e.target.value })}
+                  onChange={(e) =>
+                    setPartnerLoginData({
+                      ...partnerLoginData,
+                      password: e.target.value,
+                    })
+                  }
                   className="w-full rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm focus:ring-2 focus:ring-[#2563eb]/20 outline-none"
                   placeholder="••••••••"
                 />
@@ -415,7 +450,11 @@ export function Navbar() {
                 disabled={isLoggingIn}
                 className="w-full rounded-xl bg-[#2563eb] py-4 text-sm font-bold text-white transition-all hover:bg-[#1d4ed8] shadow-lg shadow-[#2563eb]/20 flex items-center justify-center gap-2"
               >
-                {isLoggingIn ? <Loader2 className="h-4 w-4 animate-spin" /> : "Se connecter à l'espace"}
+                {isLoggingIn ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Se connecter à l'espace"
+                )}
               </button>
             </form>
           </div>

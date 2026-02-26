@@ -43,7 +43,8 @@ try {
         'iban',
         'mobile_money_number',
         'currency',
-        'billing_address'
+        'billing_address',
+        'signature'
     ];
 
     $updateParts = [];
