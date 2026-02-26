@@ -26,6 +26,7 @@ try {
         reviews_count INT DEFAULT 0,
         oauth_provider VARCHAR(50) DEFAULT 'email',
         oauth_id VARCHAR(255) DEFAULT NULL UNIQUE,
+        role ENUM('user', 'admin') DEFAULT 'user',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB";
 

@@ -20,7 +20,7 @@ import {
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [user, setUser] = useState<{ id: string, fullname: string } | null>(null);
+  const [user, setUser] = useState<{ id: string, fullname: string, role?: string } | null>(null);
   const [hasPartnerAccount, setHasPartnerAccount] = useState(false);
   const [showPartnerLogin, setShowPartnerLogin] = useState(false);
   const [partnerLoginData, setPartnerLoginData] = useState({ login: "", password: "" });
@@ -136,24 +136,35 @@ export function Navbar() {
 
           {/* Desktop actions */}
           <div className="hidden items-center gap-3 md:flex">
-            {hasPartnerAccount ? (
-              <button
-                onClick={() => {
-                  if (pathname !== "/espace_partenaire") {
-                    setShowPartnerLogin(true);
-                  }
-                }}
-                className="rounded-lg border border-[#2563eb] text-[#2563eb] px-4 py-2 text-sm font-bold transition-all hover:bg-[#2563eb] hover:text-white"
-              >
-                Espace Partenaire
-              </button>
-            ) : (
+            {user?.role === 'admin' && (
               <Link
-                href="/devenir_partenaire"
-                className={`rounded-lg border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted ${isActive("/devenir_partenaire") ? "font-bold bg-muted/70" : ""}`}
+                href="/admin"
+                className="rounded-lg border border-purple-600 text-purple-600 px-4 py-2 text-sm font-bold transition-all hover:bg-purple-600 hover:text-white"
               >
-                Devenir Partenaire
+                Admin
               </Link>
+            )}
+
+            {user?.role !== 'admin' && (
+              hasPartnerAccount ? (
+                <button
+                  onClick={() => {
+                    if (pathname !== "/espace_partenaire") {
+                      setShowPartnerLogin(true);
+                    }
+                  }}
+                  className="rounded-lg border border-[#2563eb] text-[#2563eb] px-4 py-2 text-sm font-bold transition-all hover:bg-[#2563eb] hover:text-white"
+                >
+                  Espace Partenaire
+                </button>
+              ) : (
+                <Link
+                  href="/devenir_partenaire"
+                  className={`rounded-lg border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted ${isActive("/devenir_partenaire") ? "font-bold bg-muted/70" : ""}`}
+                >
+                  Devenir Partenaire
+                </Link>
+              )
             )}
 
             {user ? (
@@ -265,26 +276,39 @@ export function Navbar() {
                 Destinations
               </a>
               <hr className="border-border" />
-              {hasPartnerAccount ? (
-                <button
-                  onClick={() => {
-                    if (pathname !== "/espace_partenaire") {
-                      setShowPartnerLogin(true);
-                    }
-                    setMobileOpen(false);
-                  }}
-                  className="rounded-lg border border-[#2563eb] text-[#2563eb] px-4 py-2 text-sm font-bold text-center"
-                >
-                  Espace Partenaire
-                </button>
-              ) : (
+
+              {user?.role === 'admin' && (
                 <Link
-                  href="/devenir_partenaire"
-                  className={`rounded-lg border border-border px-4 py-2 text-sm font-medium text-center ${isActive("/devenir_partenaire") ? "font-bold bg-muted/50" : ""}`}
+                  href="/admin"
+                  className="rounded-lg border border-purple-600 text-purple-600 px-4 py-2 text-sm font-bold text-center"
                   onClick={() => setMobileOpen(false)}
                 >
-                  Devenir Partenaire
+                  Admin
                 </Link>
+              )}
+
+              {user?.role !== 'admin' && (
+                hasPartnerAccount ? (
+                  <button
+                    onClick={() => {
+                      if (pathname !== "/espace_partenaire") {
+                        setShowPartnerLogin(true);
+                      }
+                      setMobileOpen(false);
+                    }}
+                    className="rounded-lg border border-[#2563eb] text-[#2563eb] px-4 py-2 text-sm font-bold text-center"
+                  >
+                    Espace Partenaire
+                  </button>
+                ) : (
+                  <Link
+                    href="/devenir_partenaire"
+                    className={`rounded-lg border border-border px-4 py-2 text-sm font-medium text-center ${isActive("/devenir_partenaire") ? "font-bold bg-muted/50" : ""}`}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Devenir Partenaire
+                  </Link>
+                )
               )}
 
               {user ? (

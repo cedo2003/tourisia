@@ -6,7 +6,7 @@ import './globals.css'
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: 'Traveler - Explore the World, Your Way',
+  title: 'Tourisia',
   description: 'Discover unique experiences and hidden gems across 130+ countries with verified global providers.',
   generator: 'v0.app',
   icons: {
@@ -44,7 +44,7 @@ export default function RootLayout({
   const googleClientId = "1064867979845-f1f4re147ugosa4c0i7vukshfq5doi4s.apps.googleusercontent.com";
 
   return (
-    <html lang="en">
+    <html lang="fr" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
         <GoogleOAuthProvider clientId={googleClientId}>
           {children}

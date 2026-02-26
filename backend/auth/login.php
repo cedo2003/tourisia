@@ -22,7 +22,7 @@ try {
     $data = json_decode(file_get_contents("php://input"));
 
     if (!empty($data->email) && !empty($data->password)) {
-        $query = "SELECT id, fullname, email, password, phone, location, bio, avatar, cover_image, trips_count, countries_count, wishlist_count, reviews_count, created_at FROM users WHERE email = :email";
+        $query = "SELECT id, fullname, email, password, phone, location, bio, avatar, cover_image, trips_count, countries_count, wishlist_count, reviews_count, role, created_at FROM users WHERE email = :email";
         $stmt = $pdo->prepare($query);
 
         $email = htmlspecialchars(strip_tags($data->email));
@@ -49,6 +49,7 @@ try {
                         "countries_count" => $row['countries_count'],
                         "wishlist_count" => $row['wishlist_count'],
                         "reviews_count" => $row['reviews_count'],
+                        "role" => $row['role'],
                         "created_at" => $row['created_at']
                     ]
                 ]);

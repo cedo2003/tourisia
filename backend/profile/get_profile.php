@@ -24,7 +24,7 @@ try {
     }
 
     $id = intval($_GET['id']);
-    $query = "SELECT id, fullname, email, phone, location, bio, avatar, cover_image, trips_count, countries_count, wishlist_count, reviews_count, created_at FROM users WHERE id = :id";
+    $query = "SELECT id, fullname, email, phone, location, bio, avatar, cover_image, trips_count, countries_count, wishlist_count, reviews_count, role, is_active, created_at FROM users WHERE id = :id";
     $stmt = $pdo->prepare($query);
     $stmt->bindParam(':id', $id);
     $stmt->execute();
