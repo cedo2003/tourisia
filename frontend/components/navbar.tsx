@@ -46,7 +46,7 @@ export function Navbar() {
   const checkPartnerStatus = async (userId: string) => {
     try {
       const res = await fetch(
-        `http://localhost:8000/backend/partners/check_partner_status.php?user_id=${userId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}partners/check_partner_status.php?user_id=${userId}`,
       );
       const data = await res.json();
       if (data.hasPartnerAccount) {
@@ -62,7 +62,7 @@ export function Navbar() {
     setIsLoggingIn(true);
     try {
       const res = await fetch(
-        "http://localhost:8000/backend/partners/partner_login.php",
+        `${process.env.NEXT_PUBLIC_API_URL}partners/partner_login.php`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -120,8 +120,8 @@ export function Navbar() {
             <a
               href="/"
               className={`text-sm font-medium transition-colors hover:text-foreground ${isActive("/")
-                  ? "font-bold text-foreground"
-                  : "text-muted-foreground"
+                ? "font-bold text-foreground"
+                : "text-muted-foreground"
                 }`}
             >
               Explorer
@@ -129,8 +129,8 @@ export function Navbar() {
             <a
               href="/offers"
               className={`text-sm font-medium transition-colors hover:text-foreground ${isActive("/offers")
-                  ? "font-bold text-foreground"
-                  : "text-muted-foreground"
+                ? "font-bold text-foreground"
+                : "text-muted-foreground"
                 }`}
             >
               Offres
@@ -138,8 +138,8 @@ export function Navbar() {
             <a
               href="/destinations"
               className={`text-sm font-medium transition-colors hover:text-foreground ${isActive("/destinations")
-                  ? "font-bold text-foreground"
-                  : "text-muted-foreground"
+                ? "font-bold text-foreground"
+                : "text-muted-foreground"
                 }`}
             >
               Destinations
@@ -225,8 +225,8 @@ export function Navbar() {
                 <Link
                   href="/login"
                   className={`text-sm font-medium transition-colors hover:text-foreground ${isActive("/login")
-                      ? "font-bold text-foreground"
-                      : "text-muted-foreground"
+                    ? "font-bold text-foreground"
+                    : "text-muted-foreground"
                     }`}
                 >
                   Se Connecter
@@ -262,8 +262,8 @@ export function Navbar() {
               <a
                 href="/"
                 className={`text-sm font-medium ${isActive("/")
-                    ? "font-bold text-foreground"
-                    : "text-muted-foreground"
+                  ? "font-bold text-foreground"
+                  : "text-muted-foreground"
                   }`}
                 onClick={() => setMobileOpen(false)}
               >
@@ -272,8 +272,8 @@ export function Navbar() {
               <a
                 href="/offers"
                 className={`text-sm font-medium ${isActive("/offers")
-                    ? "font-bold text-foreground"
-                    : "text-muted-foreground"
+                  ? "font-bold text-foreground"
+                  : "text-muted-foreground"
                   }`}
                 onClick={() => setMobileOpen(false)}
               >
@@ -282,8 +282,8 @@ export function Navbar() {
               <a
                 href="/destinations"
                 className={`text-sm font-medium ${isActive("/destinations")
-                    ? "font-bold text-foreground"
-                    : "text-muted-foreground"
+                  ? "font-bold text-foreground"
+                  : "text-muted-foreground"
                   }`}
                 onClick={() => setMobileOpen(false)}
               >
@@ -366,8 +366,8 @@ export function Navbar() {
                   <Link
                     href="/login"
                     className={`text-sm font-medium ${isActive("/login")
-                        ? "font-bold text-foreground"
-                        : "text-muted-foreground"
+                      ? "font-bold text-foreground"
+                      : "text-muted-foreground"
                       }`}
                     onClick={() => setMobileOpen(false)}
                   >

@@ -84,7 +84,7 @@ export default function PartnerDashboard() {
   const fetchOffers = async (partnerId: number) => {
     try {
       const res = await fetch(
-        `http://localhost:8000/backend/offers/get_offers.php?partner_id=${partnerId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}offers/get_offers.php?partner_id=${partnerId}`,
       );
       if (res.ok) {
         const data = await res.json();
@@ -105,7 +105,7 @@ export default function PartnerDashboard() {
     setIsLoading(true);
     try {
       const res = await fetch(
-        "http://localhost:8000/backend/partners/update_partner.php",
+        `${process.env.NEXT_PUBLIC_API_URL}partners/update_partner.php`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -131,7 +131,7 @@ export default function PartnerDashboard() {
     setIsLoading(true);
     try {
       const res = await fetch(
-        `http://localhost:8000/backend/partners/generate_contract.php?partner_id=${partner.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}partners/generate_contract.php?partner_id=${partner.id}`,
       );
       const result = await res.json();
       if (res.ok) {
@@ -194,7 +194,7 @@ export default function PartnerDashboard() {
 
     try {
       const res = await fetch(
-        "http://localhost:8000/backend/offers/upload_media.php",
+        `${process.env.NEXT_PUBLIC_API_URL}offers/upload_media.php`,
         {
           method: "POST",
           body: formDataUpload,
@@ -240,8 +240,8 @@ export default function PartnerDashboard() {
     setIsLoading(true);
     try {
       const url = editingId
-        ? "http://localhost:8000/backend/offers/update_offer.php"
-        : "http://localhost:8000/backend/offers/add_offer.php";
+        ? `${process.env.NEXT_PUBLIC_API_URL}offers/update_offer.php`
+        : `${process.env.NEXT_PUBLIC_API_URL}offers/add_offer.php`;
 
       const res = await fetch(url,
         {
@@ -306,7 +306,7 @@ export default function PartnerDashboard() {
     if (!offerToDelete) return;
     setIsLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/backend/offers/delete_offer.php", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}offers/delete_offer.php`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -359,7 +359,7 @@ export default function PartnerDashboard() {
     return (
       <div className="relative w-full h-full overflow-hidden group/carousel">
         <img
-          src={`http://localhost:8000/backend/${images[currentIndex]}`}
+          src={`${process.env.NEXT_PUBLIC_API_URL}${images[currentIndex]}`}
           alt={title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
@@ -1299,7 +1299,7 @@ export default function PartnerDashboard() {
                           className="group relative aspect-square rounded-xl border border-border bg-muted overflow-hidden"
                         >
                           <img
-                            src={`http://localhost:8000/backend/${img}`}
+                            src={`${process.env.NEXT_PUBLIC_API_URL}${img}`}
                             className="w-full h-full object-cover"
                             alt={`Preview ${idx + 1}`}
                           />
@@ -1497,7 +1497,7 @@ export default function PartnerDashboard() {
                           <video
                             controls
                             className="w-full h-full"
-                            src={`http://localhost:8000/backend/${selectedOfferDetails.video}`}
+                            src={`${process.env.NEXT_PUBLIC_API_URL}${selectedOfferDetails.video}`}
                           />
                         </div>
                       </div>

@@ -18,7 +18,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/backend/auth/login.php", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}auth/login.php`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -47,7 +47,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const response = await fetch(
-        "http://localhost:8000/backend/auth/google_auth.php",
+        `${process.env.NEXT_PUBLIC_API_URL}auth/google_auth.php`,
         {
           method: "POST",
           headers: {

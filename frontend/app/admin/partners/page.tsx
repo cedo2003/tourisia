@@ -37,7 +37,7 @@ export default function AdminPartners() {
     setIsLoading(true);
     try {
       const partnersRes = await fetch(
-        "http://localhost:8000/backend/admin/get_partners.php",
+        `${process.env.NEXT_PUBLIC_API_URL}admin/get_partners.php`,
       );
       const partnersData = await partnersRes.json();
       setPartners(partnersData.filter((p: any) => Number(p.validation) === 1));
@@ -56,7 +56,7 @@ export default function AdminPartners() {
 
   const getFileUrl = (path: string) => {
     if (!path) return "";
-    return `http://localhost:8000/backend/${path}`;
+    return `${process.env.NEXT_PUBLIC_API_URL}${path}`;
   };
 
   const isPdf = (path: string) => path?.toLowerCase().endsWith(".pdf");

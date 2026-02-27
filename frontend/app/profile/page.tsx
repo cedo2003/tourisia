@@ -208,7 +208,7 @@ export default function ProfilePage() {
 
         // Refresh data from API
         const response = await fetch(
-          `http://localhost:8000/backend/profile/get_profile.php?id=${userData.id}`,
+          `${process.env.NEXT_PUBLIC_API_URL}profile/get_profile.php?id=${userData.id}`,
         );
         if (response.ok) {
           const freshData = await response.json();
@@ -239,7 +239,7 @@ export default function ProfilePage() {
 
     try {
       const response = await fetch(
-        "http://localhost:8000/backend/profile/update_profile.php",
+        `${process.env.NEXT_PUBLIC_API_URL}profile/update_profile.php`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -274,7 +274,7 @@ export default function ProfilePage() {
 
     try {
       const response = await fetch(
-        "http://localhost:8000/backend/profile/update_profile.php",
+        `${process.env.NEXT_PUBLIC_API_URL}profile/update_profile.php`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -323,7 +323,7 @@ export default function ProfilePage() {
 
     try {
       const response = await fetch(
-        "http://localhost:8000/backend/profile/upload_image.php",
+        `${process.env.NEXT_PUBLIC_API_URL}profile/upload_image.php`,
         {
           method: "POST",
           body: formData,

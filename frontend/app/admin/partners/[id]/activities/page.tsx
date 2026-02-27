@@ -36,7 +36,7 @@ export default function PartnerActivities() {
     setIsLoading(true);
     try {
       const res = await fetch(
-        `http://localhost:8000/backend/admin/get_partner_activities.php?partner_id=${id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}admin/get_partner_activities.php?partner_id=${id}`,
       );
       const result = await res.json();
       if (res.ok) {
@@ -89,7 +89,7 @@ export default function PartnerActivities() {
     return (
       <div className="relative w-full h-full group/carousel overflow-hidden">
         <img
-          src={`http://localhost:8000/backend/${images[currentIndex]}`}
+          src={`${process.env.NEXT_PUBLIC_API_URL}${images[currentIndex]}`}
           alt={`${title} - image ${currentIndex + 1}`}
           className="h-full w-full object-cover transition-transform duration-500 group-hover/carousel:scale-105"
         />
