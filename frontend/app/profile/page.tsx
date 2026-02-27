@@ -208,7 +208,7 @@ export default function ProfilePage() {
 
         // Refresh data from API
         const response = await fetch(
-          `http://localhost:8000/profile/get_profile.php?id=${userData.id}`,
+          `http://localhost:8000/backend/profile/get_profile.php?id=${userData.id}`,
         );
         if (response.ok) {
           const freshData = await response.json();
@@ -239,7 +239,7 @@ export default function ProfilePage() {
 
     try {
       const response = await fetch(
-        "http://localhost:8000/profile/update_profile.php",
+        "http://localhost:8000/backend/profile/update_profile.php",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -274,7 +274,7 @@ export default function ProfilePage() {
 
     try {
       const response = await fetch(
-        "http://localhost:8000/profile/update_profile.php",
+        "http://localhost:8000/backend/profile/update_profile.php",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -323,7 +323,7 @@ export default function ProfilePage() {
 
     try {
       const response = await fetch(
-        "http://localhost:8000/profile/upload_image.php",
+        "http://localhost:8000/backend/profile/upload_image.php",
         {
           method: "POST",
           body: formData,
@@ -363,9 +363,9 @@ export default function ProfilePage() {
   // Date formatting
   const memberSinceDate = user.created_at
     ? new Date(user.created_at).toLocaleDateString("fr-FR", {
-        month: "long",
-        year: "numeric",
-      })
+      month: "long",
+      year: "numeric",
+    })
     : "Inconnu";
 
   // Statistics from DB
@@ -427,10 +427,10 @@ export default function ProfilePage() {
                     <span className="text-3xl font-bold text-white sm:text-4xl text-center uppercase">
                       {user.fullname
                         ? user.fullname
-                            .split(" ")
-                            .map((n: string) => n[0])
-                            .join("")
-                            .slice(0, 2)
+                          .split(" ")
+                          .map((n: string) => n[0])
+                          .join("")
+                          .slice(0, 2)
                         : "SJ"}
                     </span>
                   )}
@@ -529,11 +529,10 @@ export default function ProfilePage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`relative whitespace-nowrap px-5 py-4 text-sm font-medium transition-colors ${
-                    activeTab === tab.id
-                      ? "text-[#2563eb]"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
+                  className={`relative whitespace-nowrap px-5 py-4 text-sm font-medium transition-colors ${activeTab === tab.id
+                    ? "text-[#2563eb]"
+                    : "text-muted-foreground hover:text-foreground"
+                    }`}
                 >
                   {tab.label}
                   {activeTab === tab.id && (

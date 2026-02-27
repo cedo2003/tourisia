@@ -45,7 +45,7 @@ export default function AdminUsers() {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const usersRes = await fetch("http://localhost:8000/admin/get_users.php");
+      const usersRes = await fetch("http://localhost:8000/backend/admin/get_users.php");
       if (!usersRes.ok) {
         console.error(
           "API response error:",
@@ -70,7 +70,7 @@ export default function AdminUsers() {
     setIsActionLoading(userId);
     try {
       const res = await fetch(
-        "http://localhost:8000/admin/update_user_status.php",
+        "http://localhost:8000/backend/admin/update_user_status.php",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -95,7 +95,7 @@ export default function AdminUsers() {
   const deleteUser = async (userId: string) => {
     setIsActionLoading(userId);
     try {
-      const res = await fetch("http://localhost:8000/admin/delete_user.php", {
+      const res = await fetch("http://localhost:8000/backend/admin/delete_user.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: userId }),

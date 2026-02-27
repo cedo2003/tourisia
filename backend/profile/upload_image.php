@@ -56,7 +56,7 @@ try {
 
     $filename = $type . '_' . $id . '_' . time() . '.' . $extension;
     $target_path = $upload_dir . $filename;
-    $public_path = 'http://localhost:8000/uploads/profiles/' . $filename;
+    $public_path = 'http://localhost:8000/backend/uploads/profiles/' . $filename;
 
     if (move_uploaded_file($file['tmp_name'], $target_path)) {
         // Mettre à jour la base de données

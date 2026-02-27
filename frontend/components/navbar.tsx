@@ -46,7 +46,7 @@ export function Navbar() {
   const checkPartnerStatus = async (userId: string) => {
     try {
       const res = await fetch(
-        `http://localhost:8000/partners/check_partner_status.php?user_id=${userId}`,
+        `http://localhost:8000/backend/partners/check_partner_status.php?user_id=${userId}`,
       );
       const data = await res.json();
       if (data.hasPartnerAccount) {
@@ -62,7 +62,7 @@ export function Navbar() {
     setIsLoggingIn(true);
     try {
       const res = await fetch(
-        "http://localhost:8000/partners/partner_login.php",
+        "http://localhost:8000/backend/partners/partner_login.php",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -119,31 +119,28 @@ export function Navbar() {
           <div className="hidden items-center gap-8 md:flex">
             <a
               href="/"
-              className={`text-sm font-medium transition-colors hover:text-foreground ${
-                isActive("/")
+              className={`text-sm font-medium transition-colors hover:text-foreground ${isActive("/")
                   ? "font-bold text-foreground"
                   : "text-muted-foreground"
-              }`}
+                }`}
             >
               Explorer
             </a>
             <a
               href="/offers"
-              className={`text-sm font-medium transition-colors hover:text-foreground ${
-                isActive("/offers")
+              className={`text-sm font-medium transition-colors hover:text-foreground ${isActive("/offers")
                   ? "font-bold text-foreground"
                   : "text-muted-foreground"
-              }`}
+                }`}
             >
               Offres
             </a>
             <a
               href="/destinations"
-              className={`text-sm font-medium transition-colors hover:text-foreground ${
-                isActive("/destinations")
+              className={`text-sm font-medium transition-colors hover:text-foreground ${isActive("/destinations")
                   ? "font-bold text-foreground"
                   : "text-muted-foreground"
-              }`}
+                }`}
             >
               Destinations
             </a>
@@ -227,11 +224,10 @@ export function Navbar() {
               <>
                 <Link
                   href="/login"
-                  className={`text-sm font-medium transition-colors hover:text-foreground ${
-                    isActive("/login")
+                  className={`text-sm font-medium transition-colors hover:text-foreground ${isActive("/login")
                       ? "font-bold text-foreground"
                       : "text-muted-foreground"
-                  }`}
+                    }`}
                 >
                   Se Connecter
                 </Link>
@@ -265,33 +261,30 @@ export function Navbar() {
             <div className="flex flex-col gap-3">
               <a
                 href="/"
-                className={`text-sm font-medium ${
-                  isActive("/")
+                className={`text-sm font-medium ${isActive("/")
                     ? "font-bold text-foreground"
                     : "text-muted-foreground"
-                }`}
+                  }`}
                 onClick={() => setMobileOpen(false)}
               >
                 Explorer
               </a>
               <a
                 href="/offers"
-                className={`text-sm font-medium ${
-                  isActive("/offers")
+                className={`text-sm font-medium ${isActive("/offers")
                     ? "font-bold text-foreground"
                     : "text-muted-foreground"
-                }`}
+                  }`}
                 onClick={() => setMobileOpen(false)}
               >
                 Offres
               </a>
               <a
                 href="/destinations"
-                className={`text-sm font-medium ${
-                  isActive("/destinations")
+                className={`text-sm font-medium ${isActive("/destinations")
                     ? "font-bold text-foreground"
                     : "text-muted-foreground"
-                }`}
+                  }`}
                 onClick={() => setMobileOpen(false)}
               >
                 Destinations
@@ -372,11 +365,10 @@ export function Navbar() {
                 <>
                   <Link
                     href="/login"
-                    className={`text-sm font-medium ${
-                      isActive("/login")
+                    className={`text-sm font-medium ${isActive("/login")
                         ? "font-bold text-foreground"
                         : "text-muted-foreground"
-                    }`}
+                      }`}
                     onClick={() => setMobileOpen(false)}
                   >
                     Se Connecter

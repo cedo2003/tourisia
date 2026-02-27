@@ -18,7 +18,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/auth/login.php", {
+      const response = await fetch("http://localhost:8000/backend/auth/login.php", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -47,7 +47,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const response = await fetch(
-        "http://localhost:8000/auth/google_auth.php",
+        "http://localhost:8000/backend/auth/google_auth.php",
         {
           method: "POST",
           headers: {
@@ -156,7 +156,6 @@ export default function LoginPage() {
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
               onError={() => toast.error("Échec de la connexion Google")}
-              useOneTap
               theme="outline"
               size="large"
               text="continue_with"

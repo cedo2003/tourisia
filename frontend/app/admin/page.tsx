@@ -55,12 +55,12 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const statsRes = await fetch("http://localhost:8000/admin/get_stats.php");
+      const statsRes = await fetch("http://localhost:8000/backend/admin/get_stats.php");
       const statsData = await statsRes.json();
       setStats(statsData);
 
       const partnersRes = await fetch(
-        "http://localhost:8000/admin/get_partners.php",
+        "http://localhost:8000/backend/admin/get_partners.php",
       );
       const partnersData = await partnersRes.json();
       setPendingPartners(
@@ -76,7 +76,7 @@ export default function AdminDashboard() {
   const updatePartnerStatus = async (partnerId: string, status: number) => {
     try {
       const res = await fetch(
-        "http://localhost:8000/admin/update_partner_status.php",
+        "http://localhost:8000/backend/admin/update_partner_status.php",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -102,7 +102,7 @@ export default function AdminDashboard() {
 
   const getFileUrl = (path: string) => {
     if (!path) return "";
-    return `http://localhost:8000/${path}`;
+    return `http://localhost:8000/backend/${path}`;
   };
 
   const isPdf = (path: string) => path?.toLowerCase().endsWith(".pdf");

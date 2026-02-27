@@ -14,6 +14,10 @@ import {
   Building2,
   ExternalLink,
   Loader2,
+  MapPin,
+  ChevronLeft,
+  ChevronRight,
+  Package,
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -32,7 +36,7 @@ export default function PartnerActivities() {
     setIsLoading(true);
     try {
       const res = await fetch(
-        `http://localhost:8000/admin/get_partner_activities.php?partner_id=${id}`,
+        `http://localhost:8000/backend/admin/get_partner_activities.php?partner_id=${id}`,
       );
       const result = await res.json();
       if (res.ok) {
@@ -59,6 +63,63 @@ export default function PartnerActivities() {
   if (!data) return null;
 
   const { partner, activities } = data;
+  const { stats, recent_actions, offers = [] } = activities;
+
+  const OfferCarousel = ({ images, title }: { images: string[]; title: string }) => {
+    const [currentIndex, setCurrentIndex] = useState(0);
+
+    if (!images || images.length === 0) {
+      return (
+        <div className="w-full h-full bg-muted flex items-center justify-center">
+          <Package className="h-8 w-8 text-muted-foreground/30" />
+        </div>
+      );
+    }
+
+    const next = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setCurrentIndex((prev) => (prev + 1) % images.length);
+    };
+
+    const prev = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+    };
+
+    return (
+      <div className="relative w-full h-full group/carousel overflow-hidden">
+        <img
+          src={`http://localhost:8000/backend/${images[currentIndex]}`}
+          alt={`${title} - image ${currentIndex + 1}`}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover/carousel:scale-105"
+        />
+        {images.length > 1 && (
+          <>
+            <button
+              onClick={prev}
+              className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/20 backdrop-blur-md text-white opacity-0 group-hover/carousel:opacity-100 transition-all hover:bg-black/50"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={next}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/20 backdrop-blur-md text-white opacity-0 group-hover/carousel:opacity-100 transition-all hover:bg-black/50"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+              {images.map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-1 w-3 rounded-full transition-all ${i === currentIndex ? "bg-white w-5" : "bg-white/40"}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="flex h-screen bg-muted/30">
@@ -157,46 +218,99 @@ export default function PartnerActivities() {
             </div>
           </div>
 
-          {/* Activity Log */}
-          <section className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden mb-10">
-            <div className="p-6 border-b border-border flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold">Journal d'activités</h2>
+          {/* Activity Log & Publications */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+            {/* Activity Log */}
+            <section className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden flex flex-col">
+              <div className="p-6 border-b border-border">
+                <h2 className="text-xl font-bold italic">Journal d'activités</h2>
                 <p className="text-sm text-muted-foreground">
-                  Historique des interactions récentes du partenaire.
+                  Dernières actions sur le compte.
                 </p>
               </div>
-              <button className="text-xs text-[#2563eb] font-bold hover:underline">
-                Voir tout l'historique
-              </button>
-            </div>
-            <div className="divide-y divide-border">
-              {activities.recent_actions.map((action: any, idx: number) => (
-                <div
-                  key={idx}
-                  className="p-6 flex items-start gap-4 hover:bg-muted/30 transition-colors"
-                >
-                  <div className="mt-1 h-2 w-2 rounded-full bg-[#2563eb]" />
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="font-bold text-sm">{action.action}</p>
-                      <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                        {new Date(action.date).toLocaleDateString("fr-FR", {
-                          day: "numeric",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
+              <div className="divide-y divide-border overflow-y-auto max-h-[500px]">
+                {recent_actions.length > 0 ? (
+                  recent_actions.map((action: any, idx: number) => (
+                    <div
+                      key={idx}
+                      className="p-5 flex items-start gap-3 hover:bg-muted/30 transition-colors"
+                    >
+                      <div className="mt-1 h-2 w-2 rounded-full bg-[#2563eb] shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1 gap-2">
+                          <p className="font-bold text-xs truncate">{action.action}</p>
+                          <span className="text-[10px] text-muted-foreground font-medium shrink-0 uppercase">
+                            {new Date(action.date).toLocaleDateString("fr-FR", {
+                              day: "numeric",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {action.details}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {action.details}
-                    </p>
+                  ))
+                ) : (
+                  <div className="p-10 text-center text-muted-foreground text-sm italic">
+                    Aucune activité récente.
                   </div>
-                </div>
-              ))}
-            </div>
-          </section>
+                )}
+              </div>
+            </section>
+
+            {/* Publications List */}
+            <section className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden flex flex-col">
+              <div className="p-6 border-b border-border">
+                <h2 className="text-xl font-bold italic">Publications ({offers.length})</h2>
+                <p className="text-sm text-muted-foreground">
+                  Offres et services en ligne.
+                </p>
+              </div>
+              <div className="p-4 overflow-y-auto max-h-[500px] space-y-4">
+                {offers.length > 0 ? (
+                  offers.map((offer: any) => (
+                    <div
+                      key={offer.id}
+                      className="flex gap-4 p-3 rounded-2xl border border-border bg-muted/5 group hover:bg-muted/10 transition-all"
+                    >
+                      <div className="w-24 h-24 rounded-xl overflow-hidden shrink-0 border border-border bg-muted">
+                        <OfferCarousel images={offer.images} title={offer.title} />
+                      </div>
+                      <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
+                        <div>
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <h4 className="font-bold text-sm truncate">{offer.title}</h4>
+                            <span className="text-xs font-bold text-[#2563eb] shrink-0">
+                              {offer.price} {offer.currency}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground flex items-center gap-1 mb-2">
+                            <MapPin className="h-3 w-3" /> {offer.location}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded-lg bg-muted text-[10px] font-bold uppercase tracking-wider text-muted-foreground capitalize">
+                            {offer.type}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            Publié le {new Date(offer.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-10 text-center text-muted-foreground text-sm italic">
+                    Aucune publication pour le moment.
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
 
           {/* Quick Info & Plan */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

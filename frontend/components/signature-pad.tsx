@@ -25,7 +25,7 @@ export function SignaturePad({ onSave, defaultValue }: SignaturePadProps) {
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                     setHasSignature(true);
                 };
-                img.src = defaultValue.startsWith('http') ? defaultValue : `http://localhost:8000/${defaultValue}`;
+                img.src = defaultValue.startsWith('http') ? defaultValue : `http://localhost:8000/backend/${defaultValue}`;
             }
         }
     }, [defaultValue]);

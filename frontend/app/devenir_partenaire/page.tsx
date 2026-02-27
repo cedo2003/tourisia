@@ -184,7 +184,7 @@ export default function BecomeProviderPage() {
 
     try {
       const res = await fetch(
-        "http://localhost:8000/partners/upload_docs.php",
+        "http://localhost:8000/backend/partners/upload_docs.php",
         {
           method: "POST",
           body: upData,
@@ -216,7 +216,7 @@ export default function BecomeProviderPage() {
       await new Promise((resolve) => setTimeout(resolve, 5000));
 
       const res = await fetch(
-        "http://localhost:8000/partners/register_partner.php",
+        "http://localhost:8000/backend/partners/register_partner.php",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

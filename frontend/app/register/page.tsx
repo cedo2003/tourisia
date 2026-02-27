@@ -25,7 +25,7 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/auth/register.php", {
+      const response = await fetch("http://localhost:8000/backend/auth/register.php", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -55,7 +55,7 @@ export default function RegisterPage() {
     setIsLoading(true);
     try {
       const response = await fetch(
-        "http://localhost:8000/auth/google_auth.php",
+        "http://localhost:8000/backend/auth/google_auth.php",
         {
           method: "POST",
           headers: {
@@ -206,20 +206,18 @@ export default function RegisterPage() {
                   {passwordChecks.map((check) => (
                     <div key={check.label} className="flex items-center gap-2">
                       <div
-                        className={`flex h-4 w-4 items-center justify-center rounded-full ${
-                          check.test(password) ? "bg-emerald-500" : "bg-muted"
-                        }`}
+                        className={`flex h-4 w-4 items-center justify-center rounded-full ${check.test(password) ? "bg-emerald-500" : "bg-muted"
+                          }`}
                       >
                         {check.test(password) && (
                           <Check className="h-2.5 w-2.5 text-white" />
                         )}
                       </div>
                       <span
-                        className={`text-xs ${
-                          check.test(password)
-                            ? "text-emerald-600"
-                            : "text-muted-foreground"
-                        }`}
+                        className={`text-xs ${check.test(password)
+                          ? "text-emerald-600"
+                          : "text-muted-foreground"
+                          }`}
                       >
                         {check.label}
                       </span>

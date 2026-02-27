@@ -37,7 +37,7 @@ export default function AdminPartners() {
     setIsLoading(true);
     try {
       const partnersRes = await fetch(
-        "http://localhost:8000/admin/get_partners.php",
+        "http://localhost:8000/backend/admin/get_partners.php",
       );
       const partnersData = await partnersRes.json();
       setPartners(partnersData.filter((p: any) => Number(p.validation) === 1));
@@ -56,7 +56,7 @@ export default function AdminPartners() {
 
   const getFileUrl = (path: string) => {
     if (!path) return "";
-    return `http://localhost:8000/${path}`;
+    return `http://localhost:8000/backend/${path}`;
   };
 
   const isPdf = (path: string) => path?.toLowerCase().endsWith(".pdf");
@@ -266,6 +266,99 @@ export default function AdminPartners() {
                         {selectedPartner.selected_plan || "Professionnel"}
                       </span>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Documents Section */}
+              <div className="space-y-6">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-[#2563eb]" />
+                  Documents Légaux
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* identity_document */}
+                  <div className="space-y-3">
+                    <p className="text-sm font-bold text-muted-foreground">
+                      Document d'identité
+                    </p>
+                    <div className="relative aspect-video rounded-xl border-2 border-dashed border-border overflow-hidden bg-muted/20 flex items-center justify-center">
+                      {selectedPartner.identity_document ? (
+                        <>
+                          {isPdf(selectedPartner.identity_document) ? (
+                            <iframe
+                              src={getFileUrl(
+                                selectedPartner.identity_document,
+                              )}
+                              className="w-full h-full border-none"
+                              title="ID PDF"
+                            />
+                          ) : (
+                            <img
+                              src={getFileUrl(
+                                selectedPartner.identity_document,
+                              )}
+                              alt="ID"
+                              className="w-full h-full object-contain"
+                            />
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">
+                          Aucun document
+                        </span>
+                      )}
+                    </div>
+                    <a
+                      href={getFileUrl(selectedPartner.identity_document)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-[#2563eb] hover:underline flex items-center gap-1"
+                    >
+                      Ouvrir en plein écran
+                    </a>
+                  </div>
+
+                  {/* existence_certificate */}
+                  <div className="space-y-3">
+                    <p className="text-sm font-bold text-muted-foreground">
+                      Certificat d'existence
+                    </p>
+                    <div className="relative aspect-video rounded-xl border-2 border-dashed border-border overflow-hidden bg-muted/20 flex items-center justify-center">
+                      {selectedPartner.existence_certificate ? (
+                        <>
+                          {isPdf(selectedPartner.existence_certificate) ? (
+                            <iframe
+                              src={getFileUrl(
+                                selectedPartner.existence_certificate,
+                              )}
+                              className="w-full h-full border-none"
+                              title="Cert PDF"
+                            />
+                          ) : (
+                            <img
+                              src={getFileUrl(
+                                selectedPartner.existence_certificate,
+                              )}
+                              alt="Cert"
+                              className="w-full h-full object-contain"
+                            />
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">
+                          Aucun document
+                        </span>
+                      )}
+                    </div>
+                    <a
+                      href={getFileUrl(selectedPartner.existence_certificate)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-[#2563eb] hover:underline flex items-center gap-1"
+                    >
+                      Ouvrir en plein écran
+                    </a>
                   </div>
                 </div>
               </div>

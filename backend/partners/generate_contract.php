@@ -73,7 +73,7 @@ try {
             <div style='display: flex; justify-content: space-between; align-items: flex-end;'>
                 <div style='width: 45%; text-align: center;'>
                     <div style='height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;'>
-                        <img src='http://localhost:8000/uploads/signatures/tourisia_default.png' style='max-height: 80px; max-width: 150px;' alt='Tourisia Signature'>
+                        <img src='http://localhost:8000/backend/uploads/signatures/tourisia_default.png' style='max-height: 80px; max-width: 150px;' alt='Tourisia Signature'>
                     </div>
                     <div style='border-top: 1px solid #000; padding-top: 10px;'>
                         <p style='margin: 0; font-weight: bold;'>Signature TOURISIA</p>
@@ -82,7 +82,7 @@ try {
                 </div>
                 <div style='width: 45%; text-align: center;'>
                     <div style='height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;'>
-                        " . ($partner['signature'] ? "<img src='http://localhost:8000/{$partner['signature']}' style='max-height: 80px; max-width: 150px;' alt='Partner Signature'>" : "<div style='height: 80px;'></div>") . "
+                        " . ($partner['signature'] ? "<img src='http://localhost:8000/backend/{$partner['signature']}' style='max-height: 80px; max-width: 150px;' alt='Partner Signature'>" : "<div style='height: 80px;'></div>") . "
                     </div>
                     <div style='border-top: 1px solid #000; padding-top: 10px;'>
                         <p style='margin: 0; font-weight: bold;'>Signature Partenaire</p>
