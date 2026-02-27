@@ -33,6 +33,11 @@ import {
   Bell,
   CreditCard,
   Share2,
+  Loader2,
+  Play,
+  ArrowRight,
+  ChevronLeft,
+  Trash2,
 } from "lucide-react";
 
 /* ─── DONNÉES MOCK (exemples) ─── */
@@ -163,7 +168,7 @@ const settingsSections = [
 /* ─── ONGLETS ─── */
 const tabs = [
   { id: "overview", label: "Aperçu" },
-  { id: "trips", label: "Mes voyages" },
+  { id: "reservations", label: "Mes enregistrements" },
   { id: "wishlist", label: "Favoris" },
   { id: "reviews", label: "Avis" },
   { id: "settings", label: "Paramètres" },
@@ -188,6 +193,10 @@ export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
   const [editedBio, setEditedBio] = useState("");
   const [loading, setLoading] = useState(true);
+  const [favorites, setFavorites] = useState<any[]>([]);
+  const [loadingFavorites, setLoadingFavorites] = useState(false);
+  const [reservations, setReservations] = useState<any[]>([]);
+  const [loadingReservations, setLoadingReservations] = useState(false);
 
   // Edit Profile Modal State
   const [showEditModal, setShowEditModal] = useState(false);
@@ -195,21 +204,33 @@ export default function ProfilePage() {
   const [editPhone, setEditPhone] = useState("");
   const [editLocation, setEditLocation] = useState("");
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const storedUser = localStorage.getItem("user");
-        if (!storedUser) {
-          window.location.href = "/login";
-          return;
-        }
+  // Detail Modal State
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedOffer, setSelectedOffer] = useState<any>(null);
 
-        const userData = JSON.parse(storedUser);
+  // Delete Confirmation Modal State
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [reservationToDelete, setReservationToDelete] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
+  const fetchUserData = async () => {
+    setLoading(true);
+    try {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        setEditName(parsedUser.fullname || "");
+        setEditPhone(parsedUser.phone || "");
+        setEditLocation(parsedUser.location || "");
+        fetchFavorites(parsedUser.id);
+        fetchReservations(parsedUser.id);
 
         // Refresh data from API
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}profile/get_profile.php?id=${userData.id}`,
-        );
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}profile/get_profile.php?id=${parsedUser.id} `);
         if (response.ok) {
           const freshData = await response.json();
           setUser(freshData);
@@ -218,21 +239,142 @@ export default function ProfilePage() {
           setEditPhone(freshData.phone || "");
           setEditLocation(freshData.location || "");
           localStorage.setItem("user", JSON.stringify(freshData));
-        } else {
-          // If API fails, fallback to stored data
-          setUser(userData);
-          setEditedBio(userData.bio || "");
         }
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-        toast.error("Erreur lors de la récupération du profil.");
-      } finally {
-        setLoading(false);
+      } else {
+        window.location.href = "/login";
       }
-    };
+    } catch (err) {
+      console.error("Error fetching user data", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchUserData();
-  }, []);
+  const fetchFavorites = async (userId: number) => {
+    setLoadingFavorites(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}offers/get_user_favorites.php?user_id=${userId}`);
+      const data = await res.json();
+      if (res.ok) {
+        setFavorites(data);
+      }
+    } catch (err) {
+      console.error("Error fetching favorites", err);
+    } finally {
+      setLoadingFavorites(false);
+    }
+  };
+
+  const fetchReservations = async (userId: number) => {
+    setLoadingReservations(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}offers/get_user_reservations.php?user_id=${userId}`);
+      const data = await res.json();
+      if (res.ok) {
+        setReservations(data);
+      }
+    } catch (err) {
+      console.error("Error fetching reservations", err);
+    } finally {
+      setLoadingReservations(false);
+    }
+  };
+
+  const handleBooking = async (offerId: number) => {
+    if (!user) {
+      toast.error("Veuillez vous connecter pour réserver.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}offers/book_offer.php`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: user.id, offer_id: offerId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(data.message);
+        fetchReservations(user.id); // Refresh reservations list
+      } else {
+        toast.error(data.message || "Erreur lors de la réservation.");
+      }
+    } catch (err) {
+      toast.error("Erreur de connexion au serveur.");
+    }
+  };
+
+  const confirmDelete = (reservationId: number) => {
+    setReservationToDelete(reservationId);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteReservation = async () => {
+    if (!user || reservationToDelete === null) return;
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}offers/delete_reservation.php`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: user.id, reservation_id: reservationToDelete }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(data.message);
+        fetchReservations(user.id);
+        setShowDeleteModal(false);
+        setReservationToDelete(null);
+      } else {
+        toast.error(data.message || "Erreur lors de la suppression.");
+      }
+    } catch (err) {
+      toast.error("Erreur de connexion au serveur.");
+    }
+  };
+
+  const removeFromFavorites = async (offerId: number) => {
+    if (!user) return;
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}offers/toggle_favorite.php`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: user.id, offer_id: offerId }),
+      });
+      if (res.ok) {
+        setFavorites((prev) => prev.filter((item) => item.id !== offerId));
+        toast.success("Retiré des favoris.");
+      }
+    } catch (err) {
+      toast.error("Erreur lors de la suppression.");
+    }
+  };
+
+  const getFileUrl = (path: string) => {
+    if (!path) return "";
+    return `${process.env.NEXT_PUBLIC_API_URL}${path}`;
+  };
+
+  if (loading || !user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-[#2563eb]" />
+      </div>
+    );
+  }
+
+  const memberSinceDate = user.created_at
+    ? new Date(user.created_at).toLocaleDateString("fr-FR", {
+      month: "long",
+      year: "numeric",
+    })
+    : "janvier 2024";
+
+  const currentStats = [
+    { icon: Calendar, label: "Réservations", value: reservations.length },
+    { icon: Compass, label: "Pays", value: user.countries_count || 0 },
+    { icon: Heart, label: "Favoris", value: favorites.length },
+    { icon: Star, label: "Avis", value: user.reviews_count || 0 },
+  ];
 
   const handleSaveBio = async () => {
     if (!user) return;
@@ -349,32 +491,6 @@ export default function ProfilePage() {
       toast.error("Erreur lors de l'upload de l'image.");
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#2563eb] border-t-transparent"></div>
-      </div>
-    );
-  }
-
-  if (!user) return null;
-
-  // Date formatting
-  const memberSinceDate = user.created_at
-    ? new Date(user.created_at).toLocaleDateString("fr-FR", {
-      month: "long",
-      year: "numeric",
-    })
-    : "Inconnu";
-
-  // Statistics from DB
-  const currentStats = [
-    { icon: Plane, label: "Voyages", value: user.trips_count || "0" },
-    { icon: Globe, label: "Pays", value: user.countries_count || "0" },
-    { icon: Star, label: "Avis", value: user.reviews_count || "0" },
-    { icon: Heart, label: "Favoris", value: user.wishlist_count || "0" },
-  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -804,116 +920,91 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* ══════════════════ MES VOYAGES ══════════════════ */}
-          {activeTab === "trips" && (
+          {/* ══════════════════ MES RESERVATIONS ══════════════════ */}
+          {activeTab === "reservations" && (
             <div className="flex flex-col gap-8">
-              {/* Voyages à venir */}
               <div>
                 <h2 className="text-xl font-bold text-foreground">
-                  Voyages à venir
+                  Mes réservations
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Vos réservations confirmées et en attente.
+                  Vos réservations confirmées et en attente auprès des partenaires.
                 </p>
-                <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {upcomingTrips.map((trip) => (
-                    <div
-                      key={trip.id}
-                      className="group overflow-hidden rounded-xl border border-border bg-card transition-all hover:shadow-lg hover:-translate-y-1"
-                    >
-                      <div className="relative aspect-[16/10] overflow-hidden">
-                        <Image
-                          src={trip.image}
-                          alt={trip.destination}
-                          fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                        <span
-                          className={`absolute top-3 right-3 rounded-full ${trip.statusColor} px-2.5 py-1 text-xs font-medium text-white`}
-                        >
-                          {trip.status}
-                        </span>
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold text-foreground">
-                          {trip.destination}
-                        </h3>
-                        <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          {trip.dates}
-                        </div>
-                        <button className="mt-3 w-full rounded-lg bg-[#2563eb] py-2 text-sm font-medium text-white transition-colors hover:bg-[#1d4ed8]">
-                          Voir les détails
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                  <Link
-                    href="/destinations"
-                    className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border p-8 text-center transition-colors hover:border-[#2563eb]/40 hover:bg-muted/50"
-                  >
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#2563eb]/10 text-[#2563eb]">
-                      <Compass className="h-6 w-6" />
-                    </div>
-                    <p className="mt-3 text-sm font-semibold text-foreground">
-                      Planifier un nouveau voyage
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Parcourir les destinations
-                    </p>
-                  </Link>
-                </div>
-              </div>
 
-              {/* Voyages passés */}
-              <div>
-                <h2 className="text-xl font-bold text-foreground">
-                  Voyages passés
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Vos souvenirs de voyage et avis.
-                </p>
-                <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  {pastTrips.map((trip) => (
-                    <div
-                      key={trip.id}
-                      className="group overflow-hidden rounded-xl border border-border bg-card transition-all hover:shadow-md"
-                    >
-                      <div className="relative aspect-[4/3] overflow-hidden">
-                        <Image
-                          src={trip.image}
-                          alt={trip.destination}
-                          fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent" />
-                        <div className="absolute bottom-3 left-3 right-3">
-                          <h3 className="text-sm font-semibold text-white">
-                            {trip.destination}
-                          </h3>
-                          <p className="text-xs text-white/80">
-                            {trip.location}
-                          </p>
+                {loadingReservations ? (
+                  <div className="flex h-64 items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-[#2563eb]" />
+                  </div>
+                ) : reservations.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                      <Calendar className="h-8 w-8" />
+                    </div>
+                    <h3 className="mt-4 text-lg font-semibold text-foreground">Aucune réservation</h3>
+                    <p className="mt-1 text-sm text-muted-foreground max-w-xs">
+                      Vous n'avez pas encore effectué de réservation.
+                    </p>
+                    <Link href="/offers" className="mt-6 rounded-xl bg-[#2563eb] px-6 py-2 text-sm font-bold text-white hover:bg-[#1d4ed8] transition-all">
+                      Découvrir les offres
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {reservations.map((res) => (
+                      <div
+                        key={res.id}
+                        onClick={() => {
+                          setSelectedOffer(res);
+                          setShowDetailModal(true);
+                        }}
+                        className="group overflow-hidden rounded-xl border border-border bg-card transition-all hover:shadow-lg cursor-pointer"
+                      >
+                        <div className="relative aspect-[16/10] overflow-hidden">
+                          <Image
+                            src={res.images && res.images.length > 0 ? getFileUrl(res.images[0]) : "/images/placeholder.jpg"}
+                            alt={res.title}
+                            fill
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                          <span
+                            className={`absolute top-3 right-3 rounded-full px-2.5 py-1 text-xs font-medium text-white ${res.status === 'confirmed' ? 'bg-green-500' : res.status === 'cancelled' ? 'bg-red-500' : 'bg-amber-500'
+                              }`}
+                          >
+                            {res.status === 'confirmed' ? 'Confirmé' : res.status === 'cancelled' ? 'Annulé' : 'En attente'}
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              confirmDelete(res.id);
+                            }}
+                            className="absolute top-3 left-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-destructive shadow-md hover:bg-white hover:scale-110 transition-all"
+                            aria-label="Supprimer la réservation"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
-                      </div>
-                      <div className="p-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <StarDisplay rating={trip.rating} />
-                            <span className="text-xs text-muted-foreground">
-                              {trip.date}
-                            </span>
+                        <div className="p-4">
+                          <h3 className="font-semibold text-foreground truncate">
+                            {res.title}
+                          </h3>
+                          <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                            <MapPin className="h-3 w-3" />
+                            {res.location}
+                          </div>
+                          <div className="mt-2 flex items-center justify-between border-t border-border pt-3">
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-lg font-bold text-[#2563eb]">{res.price}</span>
+                              <span className="text-xs font-medium text-muted-foreground uppercase">{res.currency}</span>
+                            </div>
+                            <button className="text-[10px] sm:text-xs font-bold text-[#2563eb] hover:underline">
+                              Voir détails
+                            </button>
                           </div>
                         </div>
-                        {!trip.reviewed && (
-                          <button className="mt-2 w-full rounded-lg border border-[#2563eb] py-1.5 text-xs font-medium text-[#2563eb] transition-colors hover:bg-[#2563eb] hover:text-white">
-                            Publier un avis
-                          </button>
-                        )}
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -927,55 +1018,82 @@ export default function ProfilePage() {
                     Mes favoris
                   </h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {wishlist.length} destinations et expériences sauvegardées.
+                    {favorites.length} destinations et expériences sauvegardées.
                   </p>
                 </div>
               </div>
-              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {wishlist.map((item) => (
-                  <div
-                    key={item.id}
-                    className="group overflow-hidden rounded-xl border border-border bg-card transition-all hover:shadow-lg hover:-translate-y-1"
-                  >
-                    <div className="relative aspect-[4/3] overflow-hidden">
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                      <button
-                        className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white shadow-md"
-                        aria-label={`Retirer ${item.name} des favoris`}
-                      >
-                        <Heart className="h-4 w-4 fill-current" />
-                      </button>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-semibold text-foreground">
-                        {item.name}
-                      </h3>
-                      <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                        <MapPin className="h-3 w-3" />
-                        {item.location}
-                      </div>
-                      <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-lg font-bold text-[#2563eb]">
-                            {item.price}€
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {item.unit}
-                          </span>
-                        </div>
-                        <button className="rounded-lg bg-[#2563eb] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#1d4ed8]">
-                          Réserver maintenant
+
+              {loadingFavorites ? (
+                <div className="flex h-64 items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-[#2563eb]" />
+                </div>
+              ) : favorites.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                    <Heart className="h-8 w-8" />
+                  </div>
+                  <h3 className="mt-4 text-lg font-semibold text-foreground">Aucun favori pour le moment</h3>
+                  <p className="mt-1 text-sm text-muted-foreground max-w-xs">
+                    Explorez nos offres et cliquez sur le cœur pour les retrouver ici.
+                  </p>
+                  <Link href="/offers" className="mt-6 rounded-xl bg-[#2563eb] px-6 py-2 text-sm font-bold text-white hover:bg-[#1d4ed8] transition-all">
+                    Découvrir les offres
+                  </Link>
+                </div>
+              ) : (
+                <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {favorites.map((item) => (
+                    <div
+                      key={item.id}
+                      className="group overflow-hidden rounded-xl border border-border bg-card transition-all hover:shadow-lg hover:-translate-y-1"
+                    >
+                      <div className="relative aspect-[4/3] overflow-hidden">
+                        <Image
+                          src={item.images && item.images.length > 0 ? getFileUrl(item.images[0]) : "/images/placeholder.jpg"}
+                          alt={item.title}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <button
+                          onClick={() => removeFromFavorites(item.id)}
+                          className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white shadow-md hover:scale-110 active:scale-95 transition-all"
+                          aria-label={`Retirer ${item.title} des favoris`}
+                        >
+                          <Heart className="h-4 w-4 fill-current" />
                         </button>
                       </div>
+                      <div className="p-4">
+                        <h3 className="font-semibold text-foreground truncate">
+                          {item.title}
+                        </h3>
+                        <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                          <MapPin className="h-3 w-3" />
+                          {item.location}
+                        </div>
+                        <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-lg font-bold text-[#2563eb]">
+                              {item.price}
+                            </span>
+                            <span className="text-xs text-muted-foreground font-bold uppercase">
+                              {item.currency}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setSelectedOffer(item);
+                              setShowDetailModal(true);
+                            }}
+                            className="rounded-lg bg-[#2563eb] px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[#1d4ed8]"
+                          >
+                            Voir plus
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -1177,6 +1295,201 @@ export default function ProfilePage() {
                   Enregistrer
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Offer Detail Modal */}
+      {showDetailModal && selectedOffer && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 overflow-hidden">
+          <div className="w-full max-w-4xl max-h-[95vh] overflow-y-auto rounded-2xl sm:rounded-3xl bg-card shadow-2xl border border-border animate-in zoom-in-95 duration-200">
+            {/* Header Sticky */}
+            <div className="sticky top-0 z-30 flex items-center justify-between p-4 sm:p-6 border-b border-border bg-card/95 backdrop-blur-sm">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="hidden sm:flex h-12 w-12 rounded-xl bg-[#2563eb]/10 items-center justify-center text-[#2563eb]">
+                  <MapPin className="h-6 w-6" />
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-xl font-bold truncate max-w-[150px] xs:max-w-[200px] sm:max-w-md">
+                    {selectedOffer.title}
+                  </h2>
+                  <p className="text-[10px] sm:text-sm text-muted-foreground capitalize">
+                    {selectedOffer.location} • {selectedOffer.type}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const isAlreadyFavorite = favorites.some((fav: any) => fav.id === selectedOffer.id);
+                    if (isAlreadyFavorite) {
+                      removeFromFavorites(selectedOffer.id);
+                    } else {
+                      toast.error("Veuillez utiliser la page des offres pour ajouter aux favoris.");
+                    }
+                  }}
+                  className={`h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-xl transition-colors ${favorites.some((fav: any) => fav.id === selectedOffer.id)
+                    ? "bg-red-50 text-red-500"
+                    : "bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  <Heart className={`h-4 w-4 sm:h-5 sm:w-5 ${favorites.some((fav: any) => fav.id === selectedOffer.id) ? "fill-current" : ""}`} />
+                </button>
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-xl hover:bg-muted text-muted-foreground transition-colors"
+                >
+                  <X className="h-4 w-4 sm:h-5 sm:w-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-4 sm:p-8 space-y-6 sm:space-y-8">
+              {/* Media Gallery (Preview) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-start">
+                <div className="space-y-4">
+                  <div className="relative aspect-[16/9] rounded-xl sm:rounded-2xl overflow-hidden shadow-lg border border-border group">
+                    <img
+                      src={selectedOffer.images && selectedOffer.images.length > 0 ? getFileUrl(selectedOffer.images[0]) : "/images/placeholder.jpg"}
+                      alt={selectedOffer.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 bg-black/60 backdrop-blur-sm text-white text-[9px] sm:text-[10px] font-bold px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full uppercase tracking-wider">
+                      {selectedOffer.images?.length || 0} Photos
+                    </div>
+                  </div>
+
+                  {/* Thumbnail row */}
+                  {selectedOffer.images && selectedOffer.images.length > 1 && (
+                    <div className="grid grid-cols-4 gap-2 sm:gap-3">
+                      {selectedOffer.images.slice(1, 5).map((img: string, idx: number) => (
+                        <div key={idx} className="aspect-square rounded-lg sm:rounded-xl overflow-hidden border border-border ring-2 ring-transparent hover:ring-[#2563eb] transition-all cursor-pointer">
+                          <img
+                            src={getFileUrl(img)}
+                            className="w-full h-full object-cover"
+                            alt="thumb"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {selectedOffer.video && (
+                    <div className="rounded-xl sm:rounded-2xl border border-[#2563eb]/20 bg-[#2563eb]/5 p-4 sm:p-6 flex flex-col items-center gap-3 sm:gap-4 text-center">
+                      <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-full bg-[#2563eb] text-white flex items-center justify-center shadow-lg shadow-[#2563eb]/30">
+                        <Play className="h-4 w-4 sm:h-6 sm:w-6 fill-current" />
+                      </div>
+                      <div>
+                        <p className="text-sm sm:text-base font-bold">Vidéo disponible</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">Découvrez l'offre en mouvement</p>
+                      </div>
+                      <a
+                        href={getFileUrl(selectedOffer.video)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-5 py-2 sm:px-6 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#2563eb] text-white text-[11px] sm:text-xs font-bold hover:bg-[#1d4ed8] transition-all"
+                      >
+                        Regarder la vidéo
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-6 sm:space-y-8">
+                  <div className="space-y-3 sm:space-y-4">
+                    <h3 className="text-base sm:text-lg font-bold flex items-center gap-2">
+                      A propos de l'offre
+                    </h3>
+                    <div className="prose prose-sm text-muted-foreground leading-relaxed text-xs sm:text-sm">
+                      {selectedOffer.description || "Aucune description disponible pour le moment."}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                    <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-muted/30 border border-border">
+                      <p className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase mb-0.5 sm:mb-1">Prix de base</p>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-base sm:text-xl font-bold text-[#2563eb]">{selectedOffer.price}</span>
+                        <span className="text-[10px] sm:text-xs font-bold">{selectedOffer.currency}</span>
+                      </div>
+                    </div>
+                    <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-green-500/5 border border-green-500/10">
+                      <p className="text-[9px] sm:text-[10px] font-bold text-green-600 uppercase mb-0.5 sm:mb-1">Disponibilité</p>
+                      <p className="text-xs sm:text-sm font-bold text-green-700">Immédiate</p>
+                    </div>
+                  </div>
+
+                  <div className="p-5 sm:p-6 rounded-xl sm:rounded-2xl bg-[#2563eb] text-white space-y-4 shadow-xl shadow-[#2563eb]/20">
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl bg-white/20 flex items-center justify-center">
+                        <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] sm:text-xs text-white/70 font-bold uppercase">Réservation</p>
+                        <p className="text-xs sm:text-sm font-bold">Planifiez votre visite</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleBooking(selectedOffer.offer_id || selectedOffer.id)}
+                      disabled={reservations.some(r => (r.offer_id === (selectedOffer.offer_id || selectedOffer.id)) && r.status !== 'cancelled')}
+                      className={`w-full py-3 sm:py-4 rounded-lg sm:rounded-xl text-[12px] sm:text-sm font-bold transition-all flex items-center justify-center gap-2 group ${reservations.some(r => (r.offer_id === (selectedOffer.offer_id || selectedOffer.id)) && r.status !== 'cancelled')
+                        ? "bg-gray-400 text-white cursor-not-allowed"
+                        : "bg-white text-[#2563eb] hover:bg-white/90"
+                        }`}
+                    >
+                      {reservations.some(r => (r.offer_id === (selectedOffer.offer_id || selectedOffer.id)) && r.status !== 'cancelled') ? "Déjà réservé" : "Réserver"}
+                      {!reservations.some(r => (r.offer_id === (selectedOffer.offer_id || selectedOffer.id)) && r.status !== 'cancelled') && <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />}
+                    </button>
+                    <p className="text-[9px] sm:text-[10px] text-center text-white/60">
+                      En cliquant sur le bouton, vous enregistrez votre réservation auprès du partenaire.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="sticky bottom-0 p-4 sm:p-6 border-t border-border bg-card/95 backdrop-blur-sm flex items-center justify-end">
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="w-full sm:w-auto px-8 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-[12px] sm:text-sm font-bold border border-border hover:bg-muted transition-colors"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md overflow-hidden rounded-2xl bg-card shadow-2xl border border-border animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center space-y-4">
+              <div className="mx-auto h-16 w-16 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+                <Trash2 className="h-8 w-8" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground">Confirmation de suppression</h3>
+              <p className="text-muted-foreground text-sm">
+                Êtes-vous sûr de vouloir supprimer cette réservation ? Cette action est irréversible.
+              </p>
+            </div>
+            <div className="flex gap-3 p-6 bg-muted/30 border-t border-border">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setReservationToDelete(null);
+                }}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-bold hover:bg-muted transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDeleteReservation}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20"
+              >
+                Supprimer
+              </button>
             </div>
           </div>
         </div>

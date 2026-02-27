@@ -34,6 +34,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 
 export default function PartnerDashboard() {
   const [partner, setPartner] = useState<any>(null);
@@ -46,6 +47,8 @@ export default function PartnerDashboard() {
   // Form states
   const [formData, setFormData] = useState<any>({});
   const [offers, setOffers] = useState<any[]>([]);
+  const [isImporting, setIsImporting] = useState(false);
+  const [pendingImportOffers, setPendingImportOffers] = useState<any[] | null>(null);
 
   // Offer Modal states
   const [showOfferModal, setShowOfferModal] = useState(false);
@@ -173,6 +176,137 @@ export default function PartnerDashboard() {
                 </html>
             `);
       printWindow.document.close();
+    }
+  };
+
+  const handleDownloadExcelFormat = () => {
+    const wb = XLSX.utils.book_new();
+
+    // Sheet 1: Template
+    const templateData = [
+      ["type", "titre", "description", "location", "prix", "devise", "caracteristiques", "images"],
+      ["herbergement", "Hôtel de la Plage", "Un magnifique hôtel avec vue sur mer.", "Dakar, Sénégal", "50000", "CFA", "Wifi: Oui | Piscine: Oui | Petit déjeuner: Inclus", "chambre.jpg, vue_mer.png"],
+      ["activite", "Visite de l'île de Gorée", "Une visite guidée complète.", "Dakar, Sénégal", "15000", "CFA", "Guide: Inclus | Transport: Non inclus | Durée: 3h", "goree1.jpg, goree2.jpg"],
+    ];
+    const wsTemplate = XLSX.utils.aoa_to_sheet(templateData);
+
+    wsTemplate['!cols'] = [
+      { wch: 15 }, { wch: 30 }, { wch: 50 }, { wch: 25 }, { wch: 10 }, { wch: 10 }, { wch: 60 }, { wch: 40 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsTemplate, "Modèle_Import");
+
+    // Sheet 2: Instructions
+    const instructionsData = [
+      ["Instructions pour l'importation"],
+      [""],
+      ["Colonne", "Description", "Exemple"],
+      ["type", "Le type de l'offre (herbergement, activite, vol, transport).", "herbergement"],
+      ["titre", "Le nom de votre offre.", "Hôtel de la Plage"],
+      ["description", "Une description détaillée (sans sauts de ligne).", "Bel hôtel..."],
+      ["location", "L'adresse ou la ville.", "Dakar, Sénégal"],
+      ["prix", "Le prix unitaire (uniquement des chiffres).", "50000"],
+      ["devise", "La devise (CFA, EUR, USD). Par défaut: CFA.", "CFA"],
+      ["caracteristiques", "Paires clé:valeur séparées par des pipelines (|).", "Wifi: Oui | Piscine: Oui"],
+      ["images", "Noms exacts des fichiers images séparés par une virgule. Vous devrez sélectionner le dossier les contenant à l'étape suivante.", "chambre.jpg, facade.png"],
+    ];
+    const wsInstructions = XLSX.utils.aoa_to_sheet(instructionsData);
+    wsInstructions['!cols'] = [{ wch: 20 }, { wch: 70 }, { wch: 30 }];
+    XLSX.utils.book_append_sheet(wb, wsInstructions, "Instructions");
+
+    XLSX.writeFile(wb, "Modele_Import_Offres.xlsx");
+  };
+
+  const handleExcelImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !partner) return;
+
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls') && !file.name.endsWith('.csv')) {
+      toast.error("Veuillez sélectionner un fichier Excel (.xlsx ou .xls).");
+      return;
+    }
+
+    setIsImporting(true);
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: "array" });
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const json = XLSX.utils.sheet_to_json(worksheet);
+
+      const formattedOffers = json.map((row: any) => {
+        const detailsObj: any = {};
+        if (row.caracteristiques && typeof row.caracteristiques === 'string') {
+          const pairs = row.caracteristiques.split('|');
+          pairs.forEach((pair: string) => {
+            const [key, val] = pair.split(':');
+            if (key && val) {
+              detailsObj[key.trim()] = val.trim();
+            }
+          });
+        }
+
+        let imageNames: string[] = [];
+        if (row.images && typeof row.images === 'string') {
+          imageNames = row.images.split(',').map((img: string) => img.trim()).filter((img: string) => img.length > 0);
+        }
+
+        return { ...row, caracteristiques: detailsObj, images: imageNames };
+      });
+
+      // Save for step 2 (folder selection)
+      setPendingImportOffers(formattedOffers);
+      setIsImporting(false);
+
+    } catch (err) {
+      toast.error("Erreur de traitement du fichier Excel : " + err);
+      setIsImporting(false);
+    } finally {
+      e.target.value = '';
+    }
+  };
+
+  const handleFolderImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!pendingImportOffers || !partner) {
+      setIsImporting(false);
+      return;
+    }
+
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append("partner_id", partner.id);
+      formDataUpload.append("offers_json", JSON.stringify(pendingImportOffers));
+
+      if (files && files.length > 0) {
+        Array.from(files).forEach((file) => {
+          formDataUpload.append("images[]", file);
+        });
+      }
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}offers/import_offers.php`, {
+        method: "POST",
+        body: formDataUpload, // multipart/form-data
+      });
+      const responseData = await res.json();
+
+      if (responseData.success) {
+        toast.success(responseData.message);
+        fetchOffers(partner.id);
+      } else {
+        toast.error(responseData.message || "Erreur lors de l'importation.");
+      }
+
+      if (responseData.errors && responseData.errors.length > 0) {
+        const errorList = responseData.errors.slice(0, 3).join("\n");
+        toast.warning(`Certaines lignes ont échoué :\n${errorList}`);
+      }
+    } catch (err) {
+      toast.error("Erreur d'envoi des données au serveur : " + err);
+    } finally {
+      setIsImporting(false);
+      setPendingImportOffers(null);
+      e.target.value = '';
     }
   };
 
@@ -586,6 +720,7 @@ export default function PartnerDashboard() {
                     <div className="rounded-2xl border border-dashed border-border p-8 text-center bg-[#2563eb]/5 flex flex-col items-center">
                       <p className="text-sm font-medium text-[#2563eb] mb-4">Vous n'avez pas encore d'offre publiée</p>
                       <button
+                        disabled={Number(partner.validation) !== 1}
                         onClick={() => {
                           setEditingId(null);
                           setNewOffer({
@@ -601,10 +736,18 @@ export default function PartnerDashboard() {
                           });
                           setShowOfferModal(true);
                         }}
-                        className="rounded-xl bg-[#2563eb] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#1d4ed8] shadow-lg shadow-[#2563eb]/20 transition-all"
+                        className={`rounded-xl px-6 py-2.5 text-xs font-bold transition-all shadow-lg ${Number(partner.validation) !== 1
+                          ? "bg-muted text-muted-foreground cursor-not-allowed grayscale"
+                          : "bg-[#2563eb] text-white hover:bg-[#1d4ed8] shadow-[#2563eb]/20"
+                          }`}
                       >
                         Ajouter ma première offre
                       </button>
+                      {Number(partner.validation) !== 1 && (
+                        <p className="mt-4 text-[10px] text-amber-600 font-medium">
+                          Votre compte doit être validé par un administrateur pour publier des offres.
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -665,31 +808,71 @@ export default function PartnerDashboard() {
                     Gérez vos offres et services publiés sur la plateforme.
                   </p>
                 </div>
-                <button
-                  disabled={Number(partner.validation) === 0}
-                  onClick={() => {
-                    setEditingId(null);
-                    setNewOffer({
-                      type: "herbergement",
-                      title: "",
-                      description: "",
-                      location: "",
-                      price: "",
-                      currency: "CFA",
-                      images: [],
-                      video: "",
-                      details: {},
-                    });
-                    setShowOfferModal(true);
-                  }}
-                  className={`rounded-xl px-6 py-2.5 text-sm font-bold transition-all shadow-lg flex items-center gap-2 ${Number(partner.validation) === 0
-                    ? "bg-muted text-muted-foreground cursor-not-allowed"
-                    : "bg-[#2563eb] text-white hover:bg-[#1d4ed8] shadow-[#2563eb]/20"
-                    }`}
-                >
-                  <Plus className="h-4 w-4" />
-                  Nouvelle Publication
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleDownloadExcelFormat}
+                    className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span className="hidden sm:inline">Format fichier</span>
+                  </button>
+
+                  <input
+                    type="file"
+                    id="excel-upload"
+                    className="hidden"
+                    accept=".xlsx, .xls, .csv"
+                    onChange={handleExcelImport}
+                    disabled={isImporting || Number(partner.validation) === 0}
+                  />
+                  <input
+                    type="file"
+                    id="folder-upload"
+                    className="hidden"
+                    {...{ webkitdirectory: "", directory: "" } as any}
+                    multiple
+                    onChange={handleFolderImport}
+                  />
+                  <button
+                    onClick={() => document.getElementById("excel-upload")?.click()}
+                    disabled={isImporting || Number(partner.validation) === 0}
+                    className={`flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium transition-colors ${Number(partner.validation) === 0 || isImporting
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:bg-[#2563eb]/10 hover:text-[#2563eb] hover:border-[#2563eb]/30"
+                      }`}
+                  >
+                    {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                    <span className="hidden sm:inline">
+                      {isImporting ? "Importation..." : "Importer"}
+                    </span>
+                  </button>
+
+                  <button
+                    disabled={Number(partner.validation) === 0}
+                    onClick={() => {
+                      setEditingId(null);
+                      setNewOffer({
+                        type: "herbergement",
+                        title: "",
+                        description: "",
+                        location: "",
+                        price: "",
+                        currency: "CFA",
+                        images: [],
+                        video: "",
+                        details: {},
+                      });
+                      setShowOfferModal(true);
+                    }}
+                    className={`rounded-xl px-6 py-2.5 text-sm font-bold transition-all shadow-lg flex items-center gap-2 ${Number(partner.validation) === 0
+                      ? "bg-muted text-muted-foreground cursor-not-allowed"
+                      : "bg-[#2563eb] text-white hover:bg-[#1d4ed8] shadow-[#2563eb]/20"
+                      }`}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Nouvelle Publication
+                  </button>
+                </div>
               </div>
 
               {offers.length > 0 ? (
@@ -1440,6 +1623,42 @@ export default function PartnerDashboard() {
         )}
 
       {/* Details Modal */}
+
+      {/* Folder Selection Modal */}
+      {pendingImportOffers && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl p-6 text-center">
+            <div className="h-16 w-16 rounded-full bg-blue-100 text-[#2563eb] flex items-center justify-center mx-auto mb-4">
+              <ImageIcon className="h-8 w-8" />
+            </div>
+            <h3 className="text-xl font-bold text-foreground mb-2">Dossier des images</h3>
+            <p className="text-sm text-muted-foreground mb-8">
+              Fichier Excel validé avec succès ({pendingImportOffers.length} offre(s) trouvées).
+              <br /><br />
+              Veuillez maintenant sélectionner le dossier sur votre ordinateur contenant toutes les images évoquées dans le fichier.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setPendingImportOffers(null);
+                  const el = document.getElementById("excel-upload") as HTMLInputElement;
+                  if (el) el.value = '';
+                }}
+                className="flex-1 rounded-xl border border-border py-3 text-sm font-bold hover:bg-muted transition-all"
+              >
+                Annuler l'import
+              </button>
+              <button
+                onClick={() => document.getElementById("folder-upload")?.click()}
+                className="flex-1 rounded-xl bg-[#2563eb] py-3 text-sm font-bold text-white hover:bg-[#1d4ed8] shadow-lg transition-all"
+              >
+                Sélectionner
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {
         showDetailsModal && selectedOfferDetails && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-0 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200">
@@ -1487,6 +1706,21 @@ export default function PartnerDashboard() {
                         {selectedOfferDetails.description || "Aucune description fournie."}
                       </p>
                     </div>
+
+                    {selectedOfferDetails.details && typeof selectedOfferDetails.details === 'object' && Object.keys(selectedOfferDetails.details).length > 0 && (
+                      <div className="pt-6">
+                        <h4 className="text-sm font-bold text-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
+                          Caractéristiques
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(selectedOfferDetails.details).map(([key, val], idx) => (
+                            <div key={idx} className="bg-muted/50 border border-border px-3 py-1.5 rounded-lg text-xs font-semibold text-foreground flex items-center gap-2">
+                              {key} <span className="text-muted-foreground font-normal">•</span> {String(val)}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {selectedOfferDetails.video && (
                       <div className="pt-6">

@@ -264,9 +264,15 @@ export default function AdminDashboard() {
                   <h2 className="text-xl font-bold">
                     {selectedPartner.business_name}
                   </h2>
-                  <p className="text-sm text-muted-foreground capitalize">
-                    {selectedPartner.activity_type} • En attente de validation
-                  </p>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground capitalize">
+                      {selectedPartner.activity_type}
+                    </span>
+                    <span className="text-muted-foreground">•</span>
+                    <span className={`font-medium ${Number(selectedPartner.validation) === 1 ? "text-green-600" : "text-amber-600"}`}>
+                      {Number(selectedPartner.validation) === 1 ? "Partenaire Validé" : "En attente de validation"}
+                    </span>
+                  </div>
                 </div>
               </div>
               <button
@@ -279,7 +285,7 @@ export default function AdminDashboard() {
 
             <div className="p-8 space-y-12">
               {/* Infos Section */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                 <div className="space-y-6">
                   <h3 className="text-lg font-bold flex items-center gap-2">
                     <Briefcase className="h-5 w-5 text-[#2563eb]" />
@@ -322,6 +328,16 @@ export default function AdminDashboard() {
                           {selectedPartner.website || "Non renseigné"}
                         </p>
                       </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-border/50">
+                    <div>
+                      <p className="text-xs font-bold text-muted-foreground uppercase">RCCM</p>
+                      <p className="font-medium">{selectedPartner.rccm_number || "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-muted-foreground uppercase">IFU / NIF</p>
+                      <p className="font-medium">{selectedPartner.ifu_number || "N/A"}</p>
                     </div>
                   </div>
                 </div>

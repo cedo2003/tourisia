@@ -32,7 +32,8 @@ try {
 
     echo json_encode([
         "hasPartnerAccount" => $partner ? true : false,
-        "validation" => $partner ? (int) $partner['validation'] : null
+        "validation" => $partner ? (int) $partner['validation'] : null,
+        "partner_id" => $partner ? (int) $partner['id'] : null
     ]);
 
 } catch (Exception $e) {

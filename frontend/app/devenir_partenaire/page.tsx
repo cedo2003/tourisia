@@ -570,7 +570,7 @@ export default function BecomeProviderPage() {
                               <input
                                 type="file"
                                 accept=".pdf"
-                                onChange={(e) => handleFileUpload(e, "rcc")}
+                                onChange={(e) => handleFileUpload(e, "rccm")}
                                 className="absolute inset-0 opacity-0"
                               />
                               <div className="flex flex-col items-center gap-1">
