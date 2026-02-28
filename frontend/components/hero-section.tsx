@@ -1,7 +1,49 @@
-import { MapPin, CalendarDays, Users, Search } from "lucide-react";
+"use client";
+
+import { useEffect, useState } from "react";
+import { MapPin, Tags, Search, Loader2 } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export function HeroSection() {
+  const router = useRouter();
+  const [location, setLocation] = useState("");
+  const [serviceType, setServiceType] = useState("all");
+  const [types, setTypes] = useState<string[]>([]);
+  const [isLoadingTypes, setIsLoadingTypes] = useState(true);
+
+  useEffect(() => {
+    fetchTypes();
+  }, []);
+
+  const fetchTypes = async () => {
+    setIsLoadingTypes(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}offers/get_offers.php`);
+      const data = await res.json();
+      if (res.ok && Array.isArray(data)) {
+        // Extract unique types from the offers
+        const uniqueTypes = Array.from(new Set(data.map((o: any) => o.type).filter(Boolean))) as string[];
+        setTypes(uniqueTypes);
+      }
+    } catch (err) {
+      console.error("Failed to fetch offer types", err);
+    } finally {
+      setIsLoadingTypes(false);
+    }
+  };
+
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    if (location.trim()) params.set("location", location.trim());
+    if (serviceType && serviceType !== "all") params.set("type", serviceType);
+    router.push(`/offers?${params.toString()}`);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleSearch();
+  };
+
   return (
     <section className="relative flex min-h-[480px] items-center justify-center overflow-hidden lg:min-h-[540px]">
       {/* Background image */}
@@ -29,30 +71,16 @@ export function HeroSection() {
             {/* Location */}
             <div className="flex flex-1 items-center gap-2 px-4 py-2">
               <MapPin className="h-4 w-4 shrink-0 text-[#2563eb]" />
-              <div className="flex flex-col">
+              <div className="flex flex-col w-full">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Emplacement
                 </span>
                 <input
                   type="text"
-                  placeholder="Où vas-tu ?"
-                  className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="hidden h-8 w-px bg-border md:block" />
-
-            {/* Dates */}
-            <div className="flex flex-1 items-center gap-2 px-4 py-2">
-              <CalendarDays className="h-4 w-4 shrink-0 text-[#2563eb]" />
-              <div className="flex flex-col">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Dates
-                </span>
-                <input
-                  type="text"
-                  placeholder="Ajouter des dates"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Lieu, ville, région..."
                   className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
                 />
               </div>
@@ -62,22 +90,38 @@ export function HeroSection() {
 
             {/* Service Type */}
             <div className="flex flex-1 items-center gap-2 px-4 py-2">
-              <Users className="h-4 w-4 shrink-0 text-[#2563eb]" />
-              <div className="flex flex-col">
+              <Tags className="h-4 w-4 shrink-0 text-[#2563eb]" />
+              <div className="flex flex-col w-full">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Type de service
                 </span>
-                <select className="w-full bg-transparent text-sm text-foreground focus:outline-none">
-                  <option>Hébergements</option>
-                  <option>Excursions</option>
-                  <option>Vols</option>
-                  <option>Expériences</option>
-                </select>
+                {isLoadingTypes ? (
+                  <div className="flex items-center gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">Chargement...</span>
+                  </div>
+                ) : (
+                  <select
+                    value={serviceType}
+                    onChange={(e) => setServiceType(e.target.value)}
+                    className="w-full bg-transparent text-sm text-foreground focus:outline-none capitalize cursor-pointer"
+                  >
+                    <option value="all">Tous les types</option>
+                    {types.map((t) => (
+                      <option key={t} value={t} className="capitalize">
+                        {t.charAt(0).toUpperCase() + t.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
 
             {/* Search button */}
-            <button className="flex items-center justify-center gap-2 rounded-full bg-[#2563eb] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#1d4ed8]">
+            <button
+              onClick={handleSearch}
+              className="flex items-center justify-center gap-2 rounded-full bg-[#2563eb] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#1d4ed8] active:scale-95"
+            >
               <Search className="h-4 w-4" />
               <span>Recherche</span>
             </button>

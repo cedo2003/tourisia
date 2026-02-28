@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import {
@@ -16,9 +17,10 @@ import {
   Clock,
   ArrowRight,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import Image from "next/image";
-import { useEffect } from "react";
 import { toast } from "sonner";
 
 // Categories are now standard
@@ -62,12 +64,24 @@ export default function OffersPage() {
   const [sortBy, setSortBy] = useState("recommended");
   const [searchQuery, setSearchQuery] = useState("");
   const [showSort, setShowSort] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const offersPerPage = 12;
   const [favorites, setFavorites] = useState<number[]>([]);
   const [userReservations, setUserReservations] = useState<number[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [userPartnerId, setUserPartnerId] = useState<number | null>(null);
+
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Pre-populate from URL params (coming from hero search)
+    const urlLocation = searchParams.get("location");
+    const urlType = searchParams.get("type");
+    if (urlLocation) setSearchQuery(urlLocation);
+    if (urlType) setActiveCategory(urlType);
+  }, [searchParams]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -207,6 +221,17 @@ export default function OffersPage() {
     return `${process.env.NEXT_PUBLIC_API_URL}${path}`;
   };
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filtered.length / offersPerPage);
+  const startIndex = (currentPage - 1) * offersPerPage;
+  const currentOffers = filtered.slice(startIndex, startIndex + offersPerPage);
+
+  // Auto-scroll to top when page changes
+  const handlePageChange = (pageNum: number) => {
+    setCurrentPage(pageNum);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -311,7 +336,7 @@ export default function OffersPage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3">
-              {filtered.map((offer) => (
+              {currentOffers.map((offer) => (
                 <div
                   key={offer.id}
                   className="group overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:shadow-lg hover:-translate-y-1 flex flex-col"
@@ -383,6 +408,58 @@ export default function OffersPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {!isLoading && totalPages > 1 && (
+            <div className="mt-12 flex items-center justify-center gap-2 border-t border-border pt-8">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-all hover:bg-muted hover:text-foreground disabled:opacity-50 disabled:pointer-events-none"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+
+              <div className="flex items-center gap-1.5 px-2">
+                {Array.from({ length: totalPages }).map((_, i) => {
+                  const pageNum = i + 1;
+                  // Show current page, edges, and one page around current
+                  if (
+                    pageNum === 1 ||
+                    pageNum === totalPages ||
+                    (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                  ) {
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold transition-all ${currentPage === pageNum
+                          ? "bg-[#2563eb] text-white shadow-lg shadow-[#2563eb]/20"
+                          : "border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+                          }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  } else if (
+                    pageNum === currentPage - 2 ||
+                    pageNum === currentPage + 2
+                  ) {
+                    return <span key={pageNum} className="px-1 text-muted-foreground">...</span>;
+                  }
+                  return null;
+                })}
+              </div>
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-all hover:bg-muted hover:text-foreground disabled:opacity-50 disabled:pointer-events-none"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
           )}
 

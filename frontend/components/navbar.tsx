@@ -135,6 +135,7 @@ export function Navbar() {
             >
               Offres
             </a>
+            {/*
             <a
               href="/destinations"
               className={`text-sm font-medium transition-colors hover:text-foreground ${isActive("/destinations")
@@ -144,6 +145,7 @@ export function Navbar() {
             >
               Destinations
             </a>
+            */}
           </div>
 
           {/* Desktop actions */}
@@ -279,6 +281,7 @@ export function Navbar() {
               >
                 Offres
               </a>
+              {/*
               <a
                 href="/destinations"
                 className={`text-sm font-medium ${isActive("/destinations")
@@ -289,6 +292,7 @@ export function Navbar() {
               >
                 Destinations
               </a>
+              */}
               <hr className="border-border" />
 
               {user?.role === "admin" && (
