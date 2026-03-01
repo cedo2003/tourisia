@@ -83,7 +83,7 @@ try {
         ':is_vat_applicable' => (int) ($data['is_vat_applicable'] ?? 0),
         ':vat_rate' => $data['vat_rate'] ?? 0.00,
         ':billing_address' => $data['billing_address'] ?? null,
-        ':selected_plan' => $data['selected_plan'] ?? 'Débutant'
+        ':selected_plan' => $data['selected_plan'] ?? 'Gratuit'
     ]);
 
     http_response_code(201);

@@ -34,6 +34,26 @@ try {
 
     $partnerId = $input['partner_id'];
 
+    // Check plan restrictions
+    $stmtPlan = $pdo->prepare("SELECT selected_plan FROM partners WHERE id = ?");
+    $stmtPlan->execute([$partnerId]);
+    $partner = $stmtPlan->fetch(PDO::FETCH_ASSOC);
+
+    if (!$partner) {
+        http_response_code(404);
+        echo json_encode(["success" => false, "message" => "Partenaire introuvable."]);
+        exit();
+    }
+
+    if ($partner['selected_plan'] === 'Gratuit') {
+        http_response_code(403);
+        echo json_encode([
+            "success" => false,
+            "message" => "L'importation en masse est réservée aux comptes professionnels. Veuillez passer au pack professionnel pour utiliser cette fonctionnalité."
+        ]);
+        exit();
+    }
+
     if (!isset($input['offers']) || !is_array($input['offers'])) {
         http_response_code(400);
         echo json_encode(["success" => false, "message" => "Aucune donnée d'offre valide fournie."]);

@@ -21,6 +21,32 @@ try {
         exit();
     }
 
+    // Check plan restrictions
+    $stmt = $pdo->prepare("SELECT selected_plan FROM partners WHERE id = ?");
+    $stmt->execute([$data['partner_id']]);
+    $partner = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$partner) {
+        http_response_code(404);
+        echo json_encode(["message" => "Partenaire introuvable."]);
+        exit();
+    }
+
+    if ($partner['selected_plan'] === 'Gratuit') {
+        $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM offers WHERE partner_id = ?");
+        $stmtCount->execute([$data['partner_id']]);
+        $offerCount = $stmtCount->fetchColumn();
+
+        if ($offerCount >= 5) {
+            http_response_code(403);
+            echo json_encode([
+                "success" => false,
+                "message" => "Limite atteinte : Le pack gratuit permet de publier jusqu'à 5 annonces maximum. Veuillez passer au pack professionnel pour plus d'annonces."
+            ]);
+            exit();
+        }
+    }
+
     $sql = "INSERT INTO offers (partner_id, type, title, description, details, location, price, currency, images, video)
             VALUES (:partner_id, :type, :title, :description, :details, :location, :price, :currency, :images, :video)";
 

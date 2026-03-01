@@ -19,7 +19,9 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
+  MessageSquare,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toast } from "sonner";
 
@@ -58,6 +60,7 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export default function OffersPage() {
+  const router = useRouter();
   const [offers, setOffers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("all");
@@ -171,27 +174,8 @@ export default function OffersPage() {
   };
 
   const handleBooking = async (offerId: number) => {
-    if (!user) {
-      toast.error("Veuillez vous connecter pour réserver.");
-      return;
-    }
-
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}offers/book_offer.php`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: user.id, offer_id: offerId }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success(data.message);
-        fetchUserReservations(user.id); // Refresh local state
-      } else {
-        toast.error(data.message || "Erreur lors de la réservation.");
-      }
-    } catch (err) {
-      toast.error("Erreur de connexion au serveur.");
-    }
+    toast.info("La réservation directe est temporairement désactivée. Veuillez contacter le partenaire par message.");
+    return;
   };
 
   const filtered = offers
@@ -649,15 +633,21 @@ export default function OffersPage() {
                       <>
                         <button
                           onClick={() => handleBooking(selectedOffer.id)}
-                          disabled={userReservations.includes(selectedOffer.id)}
-                          className={`w-full py-3 sm:py-4 rounded-lg sm:rounded-xl text-[12px] sm:text-sm font-bold transition-all flex items-center justify-center gap-2 group ${userReservations.includes(selectedOffer.id)
-                            ? "bg-gray-400 text-white cursor-not-allowed"
-                            : "bg-white text-[#2563eb] hover:bg-white/90"
-                            }`}
+                          className="w-full py-3 sm:py-4 rounded-lg sm:rounded-xl text-[12px] sm:text-sm font-bold transition-all flex items-center justify-center gap-2 group bg-gray-100 text-gray-400 cursor-not-allowed"
                         >
-                          {userReservations.includes(selectedOffer.id) ? "Déjà réservé" : "Réserver"}
-                          {!userReservations.includes(selectedOffer.id) && <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />}
+                          Réserver
                         </button>
+
+                        {selectedOffer.selected_plan !== "Gratuit" && (
+                          <button
+                            onClick={() => router.push(`/profile?tab=messagerie&partner_id=${selectedOffer.partner_id}`)}
+                            className="w-full py-3 sm:py-4 rounded-lg sm:rounded-xl text-[12px] sm:text-sm font-bold transition-all flex items-center justify-center gap-2 border border-white/30 bg-white/10 hover:bg-white/20 text-white"
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                            Discuter avec le partenaire
+                          </button>
+                        )}
+
                         <p className="text-[9px] sm:text-[10px] text-center text-white/60">
                           En cliquant sur le bouton, vous enregistrez votre réservation auprès du partenaire.
                         </p>

@@ -32,6 +32,9 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertTriangle,
+  MessageSquare,
+  Send,
+  ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -72,6 +75,15 @@ export default function PartnerDashboard() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedOfferDetails, setSelectedOfferDetails] = useState<any>(null);
 
+  // Messaging states
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [loadingConversations, setLoadingConversations] = useState(false);
+  const [selectedConversation, setSelectedConversation] = useState<any>(null);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [messageInput, setMessageInput] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+
   useEffect(() => {
     const storedPartner = localStorage.getItem("partner_session");
     if (!storedPartner) {
@@ -84,6 +96,31 @@ export default function PartnerDashboard() {
     fetchOffers(data.id);
   }, []);
 
+  // Real-time Polling for Partner Messaging
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (activeTab === "messagerie" && partner) {
+      // Immediate fetch when switching to tab
+      fetchConversations(partner.id);
+
+      // Set interval for every 5 seconds
+      interval = setInterval(() => {
+        // Refresh conversations list
+        fetchConversations(partner.id, true); // true = silent refresh
+
+        // If a conversation is open, refresh its messages
+        if (selectedConversation) {
+          refreshMessages(selectedConversation.user_id);
+        }
+      }, 5000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [activeTab, partner, selectedConversation]);
+
   const fetchOffers = async (partnerId: number) => {
     try {
       const res = await fetch(
@@ -95,6 +132,83 @@ export default function PartnerDashboard() {
       }
     } catch (err) {
       console.error("Erreur lors de la récupération des offres", err);
+    }
+  };
+
+  const fetchConversations = async (partnerId: number, silent = false) => {
+    if (!silent) setLoadingConversations(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}messages/get_conversations.php?partner_id=${partnerId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) setConversations(data);
+      }
+    } catch (err) {
+      console.error("Error fetching conversations", err);
+    } finally {
+      if (!silent) setLoadingConversations(false);
+    }
+  };
+
+  const refreshMessages = async (userId: number) => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}messages/get_messages.php?user_id=${userId}&partner_id=${partner.id}&mark_read=1&viewer_type=partner`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) setMessages(data);
+      }
+    } catch (err) {
+      console.error("Error polling messages", err);
+    }
+  };
+
+  const openConversation = async (conv: any) => {
+    setSelectedConversation(conv);
+    setLoadingMessages(true);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}messages/get_messages.php?user_id=${conv.user_id}&partner_id=${partner.id}&mark_read=1&viewer_type=partner`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) setMessages(data);
+      }
+    } catch (err) {
+      console.error("Error fetching messages", err);
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!messageInput.trim() || !selectedConversation || !partner) return;
+    setSendingMessage(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}messages/send_message.php`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sender_id: partner.id,
+          receiver_id: selectedConversation.user_id,
+          sender_type: "partner",
+          message: messageInput.trim(),
+        }),
+      });
+      if (res.ok) {
+        setMessageInput("");
+        // Refresh messages
+        const resMsg = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}messages/get_messages.php?user_id=${selectedConversation.user_id}&partner_id=${partner.id}&viewer_type=partner`
+        );
+        const data = await resMsg.json();
+        if (Array.isArray(data)) setMessages(data);
+      }
+    } catch (err) {
+      toast.error("Erreur lors de l'envoi du message.");
+    } finally {
+      setSendingMessage(false);
     }
   };
 
@@ -531,6 +645,7 @@ export default function PartnerDashboard() {
   const navItems = [
     { id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard },
     { id: "publications", label: "Publications", icon: Package },
+    ...(partner.selected_plan !== "Gratuit" ? [{ id: "messagerie", label: "Messagerie", icon: MessageSquare }] : []),
     { id: "settings", label: "Paramètres", icon: Settings },
   ];
 
@@ -765,7 +880,7 @@ export default function PartnerDashboard() {
                         </p>
                         <div className="flex items-center justify-between">
                           <p className="text-sm font-bold">
-                            {partner.selected_plan || "Débutant"}
+                            {partner.selected_plan || "Gratuit"}
                           </p>
                           <button className="text-[10px] text-[#2563eb] font-bold hover:underline">
                             Modifier
@@ -809,43 +924,47 @@ export default function PartnerDashboard() {
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={handleDownloadExcelFormat}
-                    className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
-                  >
-                    <Download className="h-4 w-4" />
-                    <span className="hidden sm:inline">Format fichier</span>
-                  </button>
+                  {partner.selected_plan !== "Gratuit" && (
+                    <>
+                      <button
+                        onClick={handleDownloadExcelFormat}
+                        className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
+                      >
+                        <Download className="h-4 w-4" />
+                        <span className="hidden sm:inline">Format fichier</span>
+                      </button>
 
-                  <input
-                    type="file"
-                    id="excel-upload"
-                    className="hidden"
-                    accept=".xlsx, .xls, .csv"
-                    onChange={handleExcelImport}
-                    disabled={isImporting || Number(partner.validation) === 0}
-                  />
-                  <input
-                    type="file"
-                    id="folder-upload"
-                    className="hidden"
-                    {...{ webkitdirectory: "", directory: "" } as any}
-                    multiple
-                    onChange={handleFolderImport}
-                  />
-                  <button
-                    onClick={() => document.getElementById("excel-upload")?.click()}
-                    disabled={isImporting || Number(partner.validation) === 0}
-                    className={`flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium transition-colors ${Number(partner.validation) === 0 || isImporting
-                      ? "opacity-50 cursor-not-allowed"
-                      : "hover:bg-[#2563eb]/10 hover:text-[#2563eb] hover:border-[#2563eb]/30"
-                      }`}
-                  >
-                    {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                    <span className="hidden sm:inline">
-                      {isImporting ? "Importation..." : "Importer"}
-                    </span>
-                  </button>
+                      <input
+                        type="file"
+                        id="excel-upload"
+                        className="hidden"
+                        accept=".xlsx, .xls, .csv"
+                        onChange={handleExcelImport}
+                        disabled={isImporting || Number(partner.validation) === 0}
+                      />
+                      <input
+                        type="file"
+                        id="folder-upload"
+                        className="hidden"
+                        {...({ webkitdirectory: "", directory: "" } as any)}
+                        multiple
+                        onChange={handleFolderImport}
+                      />
+                      <button
+                        onClick={() => document.getElementById("excel-upload")?.click()}
+                        disabled={isImporting || Number(partner.validation) === 0}
+                        className={`flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium transition-colors ${Number(partner.validation) === 0 || isImporting
+                          ? "opacity-50 cursor-not-allowed"
+                          : "hover:bg-[#2563eb]/10 hover:text-[#2563eb] hover:border-[#2563eb]/30"
+                          }`}
+                      >
+                        {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                        <span className="hidden sm:inline">
+                          {isImporting ? "Importation..." : "Importer"}
+                        </span>
+                      </button>
+                    </>
+                  )}
 
                   <button
                     disabled={Number(partner.validation) === 0}
@@ -941,6 +1060,154 @@ export default function PartnerDashboard() {
                     Ajoutez vos hôtels, circuits et expériences directement ici
                     pour attirer des voyageurs du monde entier.
                   </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "messagerie" && (
+            <div className="animate-in fade-in duration-500">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">Messagerie</h2>
+                  <p className="text-muted-foreground mt-1">Vos échanges avec les clients.</p>
+                </div>
+              </div>
+
+              {selectedConversation ? (
+                /* ── Vue Discussion ── */
+                <div className="flex flex-col h-[72vh] rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+                  {/* Chat Header */}
+                  <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card sticky top-0 z-10">
+                    <button
+                      onClick={() => {
+                        setSelectedConversation(null);
+                        fetchConversations(partner.id);
+                      }}
+                      className="p-2 rounded-xl hover:bg-muted text-muted-foreground transition-colors"
+                    >
+                      <ArrowLeft className="h-5 w-5" />
+                    </button>
+                    <div className="h-10 w-10 rounded-full bg-[#2563eb]/10 flex items-center justify-center text-[#2563eb] font-bold text-sm shrink-0 uppercase">
+                      {selectedConversation.user_name?.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold truncate">{selectedConversation.user_name}</p>
+                      <p className="text-[11px] text-muted-foreground">{selectedConversation.user_email}</p>
+                    </div>
+                  </div>
+
+                  {/* Messages Area */}
+                  <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 bg-muted/10">
+                    {loadingMessages ? (
+                      <div className="flex h-full items-center justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-[#2563eb]" />
+                      </div>
+                    ) : messages.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                        <MessageSquare className="h-10 w-10 text-muted-foreground/30 mb-4" />
+                        <p className="text-sm text-muted-foreground">Aucun message. Envoyez une réponse pour démarrer.</p>
+                      </div>
+                    ) : (
+                      messages.map((msg: any, idx: number) => (
+                        <div key={idx} className={`flex ${msg.sender_type === "partner" ? "justify-end" : "justify-start"}`}>
+                          {msg.sender_type !== "partner" && (
+                            <div className="h-7 w-7 rounded-full bg-[#2563eb]/10 flex items-center justify-center text-[#2563eb] text-xs font-bold mr-2 mt-1 shrink-0 uppercase">
+                              {selectedConversation.user_name?.charAt(0)}
+                            </div>
+                          )}
+                          <div
+                            className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm ${msg.sender_type === "partner"
+                              ? "bg-[#2563eb] text-white rounded-br-sm"
+                              : "bg-card text-foreground border border-border rounded-bl-sm"
+                              }`}
+                          >
+                            {msg.message}
+                            <p className={`text-[10px] mt-1 ${msg.sender_type === "partner" ? "text-white/60" : "text-muted-foreground"} text-right`}>
+                              {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Input Bar */}
+                  <div className="px-4 py-3 border-t border-border bg-card">
+                    <div className="flex items-center gap-3 rounded-xl bg-muted/30 border border-border px-4 py-2">
+                      <input
+                        type="text"
+                        value={messageInput}
+                        onChange={(e) => setMessageInput(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                        placeholder="Répondre au client..."
+                        className="flex-1 text-sm bg-transparent focus:outline-none placeholder:text-muted-foreground"
+                      />
+                      <button
+                        onClick={sendMessage}
+                        disabled={sendingMessage || !messageInput.trim()}
+                        className="h-8 w-8 flex items-center justify-center rounded-lg bg-[#2563eb] text-white hover:bg-[#1d4ed8] transition-colors shrink-0 disabled:opacity-50"
+                      >
+                        {sendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* ── Liste des Conversations ── */
+                <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+                  {loadingConversations ? (
+                    <div className="flex h-64 items-center justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-[#2563eb]" />
+                    </div>
+                  ) : conversations.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-24 px-8 text-center">
+                      <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center mb-6">
+                        <MessageSquare className="h-10 w-10 text-muted-foreground/50" />
+                      </div>
+                      <h3 className="text-lg font-bold text-foreground">Aucune discussion</h3>
+                      <p className="text-sm text-muted-foreground mt-2 max-w-sm leading-relaxed">
+                        Quand un client vous envoie un message, la conversation apparaîtra ici.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-border">
+                      {conversations.map((conv) => (
+                        <button
+                          key={conv.user_id}
+                          onClick={() => openConversation(conv)}
+                          className="w-full flex items-center gap-4 p-4 hover:bg-muted/30 transition-colors text-left group"
+                        >
+                          <div className="h-12 w-12 rounded-full bg-[#2563eb]/10 flex items-center justify-center text-[#2563eb] font-bold text-lg shrink-0 uppercase">
+                            {conv.user_name?.charAt(0)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-0.5">
+                              <h4 className="font-bold text-foreground truncate group-hover:text-[#2563eb] transition-colors">
+                                {conv.user_name}
+                              </h4>
+                              {conv.last_message_at && (
+                                <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
+                                  {new Date(conv.last_message_at).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <p className="text-sm text-muted-foreground truncate pr-4">
+                                {conv.last_message}
+                              </p>
+                              {Number(conv.unread_count) > 0 && (
+                                <span className="h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full bg-[#2563eb] text-[10px] font-bold text-white shadow-sm shadow-[#2563eb]/20">
+                                  {conv.unread_count}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <ChevronRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1589,7 +1856,8 @@ export default function PartnerDashboard() {
               </div>
             </div>
           </div>
-        )}
+        )
+      }
       {/* Delete Confirmation Modal */}
       {
         showDeleteModal && (
@@ -1620,44 +1888,47 @@ export default function PartnerDashboard() {
               </div>
             </div>
           </div>
-        )}
+        )
+      }
 
       {/* Details Modal */}
 
       {/* Folder Selection Modal */}
-      {pendingImportOffers && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl p-6 text-center">
-            <div className="h-16 w-16 rounded-full bg-blue-100 text-[#2563eb] flex items-center justify-center mx-auto mb-4">
-              <ImageIcon className="h-8 w-8" />
-            </div>
-            <h3 className="text-xl font-bold text-foreground mb-2">Dossier des images</h3>
-            <p className="text-sm text-muted-foreground mb-8">
-              Fichier Excel validé avec succès ({pendingImportOffers.length} offre(s) trouvées).
-              <br /><br />
-              Veuillez maintenant sélectionner le dossier sur votre ordinateur contenant toutes les images évoquées dans le fichier.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setPendingImportOffers(null);
-                  const el = document.getElementById("excel-upload") as HTMLInputElement;
-                  if (el) el.value = '';
-                }}
-                className="flex-1 rounded-xl border border-border py-3 text-sm font-bold hover:bg-muted transition-all"
-              >
-                Annuler l'import
-              </button>
-              <button
-                onClick={() => document.getElementById("folder-upload")?.click()}
-                className="flex-1 rounded-xl bg-[#2563eb] py-3 text-sm font-bold text-white hover:bg-[#1d4ed8] shadow-lg transition-all"
-              >
-                Sélectionner
-              </button>
+      {
+        pendingImportOffers && (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl p-6 text-center">
+              <div className="h-16 w-16 rounded-full bg-blue-100 text-[#2563eb] flex items-center justify-center mx-auto mb-4">
+                <ImageIcon className="h-8 w-8" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-2">Dossier des images</h3>
+              <p className="text-sm text-muted-foreground mb-8">
+                Fichier Excel validé avec succès ({pendingImportOffers.length} offre(s) trouvées).
+                <br /><br />
+                Veuillez maintenant sélectionner le dossier sur votre ordinateur contenant toutes les images évoquées dans le fichier.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setPendingImportOffers(null);
+                    const el = document.getElementById("excel-upload") as HTMLInputElement;
+                    if (el) el.value = '';
+                  }}
+                  className="flex-1 rounded-xl border border-border py-3 text-sm font-bold hover:bg-muted transition-all"
+                >
+                  Annuler l'import
+                </button>
+                <button
+                  onClick={() => document.getElementById("folder-upload")?.click()}
+                  className="flex-1 rounded-xl bg-[#2563eb] py-3 text-sm font-bold text-white hover:bg-[#1d4ed8] shadow-lg transition-all"
+                >
+                  Sélectionner
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {
         showDetailsModal && selectedOfferDetails && (
@@ -1774,5 +2045,6 @@ export default function PartnerDashboard() {
           </div>
         )}
     </div>
+
   );
 }

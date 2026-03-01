@@ -16,11 +16,11 @@ try {
     $partnerId = isset($_GET['partner_id']) ? $_GET['partner_id'] : null;
 
     if ($partnerId) {
-        $stmt = $pdo->prepare("SELECT * FROM offers WHERE partner_id = ? ORDER BY created_at DESC");
+        $stmt = $pdo->prepare("SELECT o.*, p.selected_plan FROM offers o JOIN partners p ON o.partner_id = p.id WHERE o.partner_id = ? ORDER BY o.created_at DESC");
         $stmt->execute([$partnerId]);
     } else {
         // Fetch all offers for the public page
-        $stmt = $pdo->prepare("SELECT * FROM offers ORDER BY created_at DESC");
+        $stmt = $pdo->prepare("SELECT o.*, p.selected_plan FROM offers o JOIN partners p ON o.partner_id = p.id ORDER BY o.created_at DESC");
         $stmt->execute();
     }
     $offers = $stmt->fetchAll(PDO::FETCH_ASSOC);

@@ -39,13 +39,12 @@ const stats = [
 
 const plans = [
   {
-    name: "Débutant",
+    name: "Gratuit",
     price: "Gratuit",
     features: [
-      "Jusqu’à 3 annonces",
+      "Jusqu’à 5 annonces",
       "Statistiques de base",
       "Support standard",
-      "Messagerie avec voyageurs",
       "Paiements sécurisés",
     ],
     cta: "Commencer maintenant",
@@ -58,6 +57,8 @@ const plans = [
       "Annonces illimitées",
       "Statistiques avancées",
       "Support prioritaire",
+      "Messagerie avec voyageurs",
+      "Importation en masse",
       "Mise en avant premium",
       "Outils promotionnels",
     ],
@@ -68,11 +69,12 @@ const plans = [
     name: "Entreprise",
     price: "99 $",
     features: [
+      "Tout ce que comporte le pack professionnel",
       "Gestionnaire dédié",
       "Accès API",
       "White-label",
       "Gestion d’équipe",
-      "Importation en masse",
+
     ],
     cta: "Commencer maintenant",
     highlighted: false,
@@ -149,7 +151,7 @@ export default function BecomeProviderPage() {
     is_vat_applicable: false,
     vat_rate: "18",
     billing_address: "",
-    selected_plan: "Débutant",
+    selected_plan: "Gratuit",
   });
 
   useEffect(() => {
@@ -157,7 +159,7 @@ export default function BecomeProviderPage() {
     if (user) setCurrentUser(JSON.parse(user));
   }, []);
 
-  const handleStart = (planName: string = "Débutant") => {
+  const handleStart = (planName: string = "Gratuit") => {
     if (!currentUser) {
       toast.info("Veuillez vous connecter pour continuer.");
       window.location.href = "/login?redirect=/devenir_partenaire";

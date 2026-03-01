@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import Image from "next/image";
@@ -20,6 +21,7 @@ import {
   Check,
   X,
   Plane,
+  Plus,
   Hotel,
   Compass,
   Award,
@@ -38,6 +40,9 @@ import {
   ArrowRight,
   ChevronLeft,
   Trash2,
+  MessageSquare,
+  Send,
+  ArrowLeft,
 } from "lucide-react";
 
 /* ─── DONNÉES MOCK (exemples) ─── */
@@ -168,9 +173,9 @@ const settingsSections = [
 /* ─── ONGLETS ─── */
 const tabs = [
   { id: "overview", label: "Aperçu" },
-  { id: "reservations", label: "Mes enregistrements" },
   { id: "wishlist", label: "Favoris" },
   { id: "reviews", label: "Avis" },
+  { id: "messagerie", label: "Messagerie" },
   { id: "settings", label: "Paramètres" },
 ];
 
@@ -188,6 +193,15 @@ function StarDisplay({ rating }: { rating: number }) {
 }
 
 export default function ProfilePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ProfileContent />
+    </Suspense>
+  );
+}
+
+function ProfileContent() {
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState("overview");
   const [isEditing, setIsEditing] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -212,9 +226,65 @@ export default function ProfilePage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [reservationToDelete, setReservationToDelete] = useState<number | null>(null);
 
+  // Messaging states
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [loadingConversations, setLoadingConversations] = useState(false);
+  const [selectedConversation, setSelectedConversation] = useState<any>(null);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [messageInput, setMessageInput] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [partners, setPartners] = useState<any[]>([]);
+  const [showNewConvModal, setShowNewConvModal] = useState(false);
+  const [selectedPartnerId, setSelectedPartnerId] = useState<number | null>(null);
+
   useEffect(() => {
     fetchUserData();
   }, []);
+
+  // Handle URL params for auto-navigation
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    const partnerIdParam = searchParams.get("partner_id");
+
+    if (tabParam === "messagerie") {
+      setActiveTab("messagerie");
+      if (partnerIdParam) {
+        handleAutoOpenConversation(parseInt(partnerIdParam));
+      }
+    }
+  }, [searchParams, conversations]);
+
+  const handleAutoOpenConversation = (partnerId: number) => {
+    // Check if conversation already exists in loaded conversations
+    const existing = conversations.find(c => parseInt(c.partner_id) === partnerId);
+    if (existing) {
+      openConversation(existing);
+    } else {
+      // If not, fetch partner info and start a temporary "new" conversation state
+      startNewConversationFromOffer(partnerId);
+    }
+  };
+
+  const startNewConversationFromOffer = async (partnerId: number) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}partners/get_partners.php`);
+      const allPartners = await res.json();
+      const targetPartner = allPartners.find((p: any) => parseInt(p.id) === partnerId);
+
+      if (targetPartner) {
+        setSelectedConversation({
+          partner_id: partnerId,
+          partner_name: targetPartner.business_name,
+          partner_email: targetPartner.business_email,
+          isNew: true
+        });
+        setMessages([]);
+      }
+    } catch (err) {
+      console.error("Error starting conversation from offer", err);
+    }
+  };
 
   const fetchUserData = async () => {
     setLoading(true);
@@ -228,6 +298,8 @@ export default function ProfilePage() {
         setEditLocation(parsedUser.location || "");
         fetchFavorites(parsedUser.id);
         fetchReservations(parsedUser.id);
+        fetchConversations(parsedUser.id);
+        fetchPartners();
 
         // Refresh data from API
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}profile/get_profile.php?id=${parsedUser.id} `);
@@ -277,6 +349,137 @@ export default function ProfilePage() {
       console.error("Error fetching reservations", err);
     } finally {
       setLoadingReservations(false);
+    }
+  };
+
+  const fetchPartners = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}partners/get_partners.php`);
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setPartners(data);
+      }
+    } catch (err) {
+      console.error("Error fetching partners", err);
+    }
+  };
+
+  const fetchConversations = async (userId: number, silent = false) => {
+    // Only show loading if not silent AND we don't have conversations yet
+    if (!silent && conversations.length === 0) setLoadingConversations(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}messages/get_conversations.php?user_id=${userId}`);
+      const data = await res.json();
+      if (Array.isArray(data)) setConversations(data);
+    } catch (err) {
+      console.error("Error fetching conversations", err);
+    } finally {
+      setLoadingConversations(false);
+    }
+  };
+
+  const refreshMessages = async (partnerId: number) => {
+    if (!user) return;
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}messages/get_messages.php?user_id=${user.id}&partner_id=${partnerId}&mark_read=1&viewer_type=user`
+      );
+      const data = await res.json();
+      if (Array.isArray(data)) setMessages(data);
+    } catch (err) {
+      console.error("Error polling messages", err);
+    }
+  };
+
+  // Real-time Polling for User Messaging
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (activeTab === "messagerie" && user) {
+      // Immediate fetch when switching to tab - only if list is empty
+      if (conversations.length === 0) {
+        fetchConversations(user.id);
+      }
+
+      // Set interval for every 5 seconds
+      interval = setInterval(() => {
+        // Refresh conversations list silently
+        fetchConversations(user.id, true);
+
+        // If a conversation is open, refresh its messages
+        if (selectedConversation) {
+          refreshMessages(selectedConversation.partner_id);
+        }
+      }, 5000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [activeTab, user, selectedConversation?.partner_id]);
+
+  const openConversation = async (conv: any) => {
+    setSelectedConversation(conv);
+    // Only show loading if we don't have messages for this conversation yet
+    if (messages.length === 0) setLoadingMessages(true);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}messages/get_messages.php?user_id=${user.id}&partner_id=${conv.partner_id}&mark_read=1&viewer_type=user`
+      );
+      const data = await res.json();
+      if (Array.isArray(data)) setMessages(data);
+    } catch (err) {
+      console.error("Error fetching messages", err);
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!messageInput.trim() || !selectedConversation || !user) return;
+    setSendingMessage(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}messages/send_message.php`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sender_id: user.id,
+          receiver_id: selectedConversation.partner_id,
+          sender_type: "user",
+          message: messageInput.trim(),
+        }),
+      });
+      if (res.ok) {
+        setMessageInput("");
+        // Refresh conversations immediately to update last message
+        fetchConversations(user.id, true);
+
+        const resMsg = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}messages/get_messages.php?user_id=${user.id}&partner_id=${selectedConversation.partner_id}&viewer_type=user`
+        );
+        const data = await resMsg.json();
+        if (Array.isArray(data)) setMessages(data);
+      }
+    } catch (err) {
+      toast.error("Erreur lors de l'envoi du message.");
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
+  const startNewConversation = async () => {
+    if (!selectedPartnerId || !user) return;
+    const found = conversations.find((c: any) => c.partner_id === selectedPartnerId);
+    if (found) {
+      setShowNewConvModal(false);
+      openConversation(found);
+      return;
+    }
+    const partner = partners.find((p: any) => p.id === selectedPartnerId);
+    if (partner) {
+      setShowNewConvModal(false);
+      setSelectedConversation({ partner_id: partner.id, partner_name: partner.business_name, partner_email: partner.business_email });
+      setMessages([]);
     }
   };
 
@@ -370,8 +573,6 @@ export default function ProfilePage() {
     : "janvier 2024";
 
   const currentStats = [
-    { icon: Calendar, label: "Réservations", value: reservations.length },
-    { icon: Compass, label: "Pays", value: user.countries_count || 0 },
     { icon: Heart, label: "Favoris", value: favorites.length },
     { icon: Star, label: "Avis", value: user.reviews_count || 0 },
   ];
@@ -1156,344 +1357,561 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* ══════════════════ PARAMÈTRES ══════════════════ */}
-          {activeTab === "settings" && (
-            <div className="mx-auto max-w-2xl">
-              <h2 className="text-xl font-bold text-foreground">
-                Paramètres du compte
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Gérez vos préférences et informations personnelles.
-              </p>
-              <div className="mt-6 flex flex-col gap-3">
-                {settingsSections.map((section) => (
-                  <button
-                    key={section.label}
-                    className="flex items-center gap-4 rounded-xl border border-border bg-card p-5 text-left transition-all hover:border-[#2563eb]/30 hover:shadow-md"
-                  >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#2563eb]/10 text-[#2563eb]">
-                      <section.icon className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-foreground">
-                        {section.label}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {section.desc}
-                      </p>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                  </button>
-                ))}
+          {/* ══════════════════ MESSAGERIE ══════════════════ */}
+          {activeTab === "messagerie" && (
+            <div className="animate-in fade-in duration-500 h-[75vh] flex flex-col">
+              <div className="flex items-center justify-between mb-4 shrink-0">
+                <div>
+                  <h2 className="text-xl font-bold text-foreground font-display">Ma messagerie</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Échangez avec les partenaires pour vos questions.</p>
+                </div>
+
               </div>
 
-              <div className="mt-8 rounded-xl border border-destructive/20 bg-destructive/5 p-6">
-                <h3 className="text-sm font-semibold text-destructive">
-                  Zone de danger
-                </h3>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Supprimer définitivement votre compte et toutes les données
-                  associées. Cette action est irréversible.
-                </p>
-                <div className="mt-4 flex items-center gap-3">
-                  <button className="rounded-lg border border-destructive/30 px-4 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive hover:text-white">
-                    Supprimer mon compte
-                  </button>
-                  <button
-                    onClick={() => {
-                      localStorage.removeItem("user");
-                      window.location.href = "/login";
-                    }}
-                    className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Se déconnecter
-                  </button>
+              <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0">
+                {/* ── Liste des Conversations (Sidebar) ── */}
+                <div className={`lg:w-80 flex flex-col border border-border bg-card rounded-2xl shadow-sm overflow-hidden ${selectedConversation ? "hidden lg:flex" : "flex"
+                  }`}>
+                  <div className="p-4 border-b border-border bg-muted/20">
+                    <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4 text-[#2563eb]" />
+                      Discussions
+                    </h3>
+                  </div>
+                  <div className="flex-1 overflow-y-auto divide-y divide-border custom-scrollbar">
+                    {loadingConversations && conversations.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-40">
+                        <Loader2 className="h-6 w-6 animate-spin text-[#2563eb]" />
+                      </div>
+                    ) : conversations.length === 0 ? (
+                      <div className="p-8 text-center">
+                        <p className="text-xs text-muted-foreground">Aucune discussion active.</p>
+                      </div>
+                    ) : (
+                      conversations.map((conv) => (
+                        <button
+                          key={conv.partner_id}
+                          onClick={() => openConversation(conv)}
+                          className={`w-full flex items-center gap-3 p-4 hover:bg-[#2563eb]/5 transition-all text-left group ${selectedConversation?.partner_id === conv.partner_id ? "bg-[#2563eb]/5 border-l-4 border-l-[#2563eb]" : "border-l-4 border-l-transparent"
+                            }`}
+                        >
+                          <div className="h-10 w-10 rounded-full bg-[#2563eb]/10 flex items-center justify-center text-[#2563eb] font-bold text-sm shrink-0 uppercase">
+                            {conv.partner_name?.charAt(0)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-0.5">
+                              <h4 className="font-bold text-sm text-foreground truncate group-hover:text-[#2563eb] transition-colors">
+                                {conv.partner_name}
+                              </h4>
+                              {conv.last_message_at && (
+                                <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
+                                  {new Date(conv.last_message_at).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs text-muted-foreground truncate pr-4">
+                                {conv.last_message || "Démarrer..."}
+                              </p>
+                              {Number(conv.unread_count) > 0 && (
+                                <span className="h-4 min-w-[16px] px-1 flex items-center justify-center rounded-full bg-[#2563eb] text-[9px] font-bold text-white shadow-sm shadow-[#2563eb]/20">
+                                  {conv.unread_count}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* ── Vue Discussion (Main Content) ── */}
+                <div className={`flex-1 flex flex-col border border-border bg-card rounded-2xl shadow-sm overflow-hidden ${!selectedConversation ? "hidden lg:flex" : "flex"
+                  }`}>
+                  {selectedConversation ? (
+                    <>
+                      <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card sticky top-0 z-10 shrink-0">
+                        <button
+                          onClick={() => setSelectedConversation(null)}
+                          className="lg:hidden p-2 rounded-xl hover:bg-muted text-muted-foreground transition-colors"
+                        >
+                          <ArrowLeft className="h-5 w-5" />
+                        </button>
+                        <div className="h-10 w-10 rounded-full bg-[#2563eb]/10 flex items-center justify-center text-[#2563eb] font-bold text-sm shrink-0 uppercase">
+                          {selectedConversation.partner_name?.charAt(0)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm truncate">{selectedConversation.partner_name}</p>
+                          <p className="text-[11px] text-muted-foreground">{selectedConversation.partner_email}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 bg-muted/5 custom-scrollbar">
+                        {loadingMessages && messages.length === 0 ? (
+                          <div className="flex h-full items-center justify-center">
+                            <Loader2 className="h-6 w-6 animate-spin text-[#2563eb]" />
+                          </div>
+                        ) : messages.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center h-full text-center p-8 opacity-40">
+                            <MessageSquare className="h-10 w-10 mb-4" />
+                            <p className="text-xs">Aucun message pour l'instant.</p>
+                          </div>
+                        ) : (
+                          messages.map((msg: any, idx: number) => (
+                            <div key={idx} className={`flex ${msg.sender_type === "user" ? "justify-end" : "justify-start"}`}>
+                              {msg.sender_type !== "user" && (
+                                <div className="h-7 w-7 rounded-full bg-[#2563eb]/10 flex items-center justify-center text-[#2563eb] text-[10px] font-bold mr-2 mt-1 shrink-0 uppercase">
+                                  {selectedConversation.partner_name?.charAt(0)}
+                                </div>
+                              )}
+                              <div
+                                className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-xs leading-relaxed shadow-sm ${msg.sender_type === "user"
+                                  ? "bg-[#2563eb] text-white rounded-br-none"
+                                  : "bg-white text-foreground border border-border rounded-bl-none"
+                                  }`}
+                              >
+                                {msg.message}
+                                <p className={`text-[9px] mt-1 ${msg.sender_type === "user" ? "text-white/60" : "text-muted-foreground"} text-right`}>
+                                  {msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Envoi..."}
+                                </p>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      <div className="px-4 py-3 border-t border-border bg-card shrink-0">
+                        <div className="flex items-center gap-3 rounded-xl bg-muted/40 border border-border px-4 py-2 focus-within:ring-2 focus-within:ring-[#2563eb]/20 transition-all">
+                          <input
+                            type="text"
+                            value={messageInput}
+                            onChange={(e) => setMessageInput(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                            placeholder="Écrivez votre message..."
+                            className="flex-1 text-sm bg-transparent focus:outline-none placeholder:text-muted-foreground"
+                          />
+                          <button
+                            onClick={sendMessage}
+                            disabled={sendingMessage || !messageInput.trim()}
+                            className="h-9 w-9 flex items-center justify-center rounded-lg bg-[#2563eb] text-white hover:bg-[#1d4ed8] transition-all shrink-0 shadow-md shadow-[#2563eb]/20 active:scale-95 disabled:opacity-50"
+                          >
+                            {sendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-12 bg-muted/5">
+                      <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center mb-6">
+                        <MessageSquare className="h-10 w-10 text-muted-foreground/30" />
+                      </div>
+                      <h3 className="text-lg font-bold text-foreground opacity-70">Sélectionnez une discussion</h3>
+                      <p className="text-xs text-muted-foreground mt-2 max-w-[240px]">
+                        Choisissez un partenaire dans la liste à gauche pour voir vos échanges.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-          )}
-        </section>
-      </main>
+          )
+          }
+
+
+
+          {/* ══════════════════ PARAMÈTRES ══════════════════ */}
+          {
+            activeTab === "settings" && (
+              <div className="mx-auto max-w-2xl">
+                <h2 className="text-xl font-bold text-foreground">
+                  Paramètres du compte
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Gérez vos préférences et informations personnelles.
+                </p>
+                <div className="mt-6 flex flex-col gap-3">
+                  {settingsSections.map((section) => (
+                    <button
+                      key={section.label}
+                      className="flex items-center gap-4 rounded-xl border border-border bg-card p-5 text-left transition-all hover:border-[#2563eb]/30 hover:shadow-md"
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#2563eb]/10 text-[#2563eb]">
+                        <section.icon className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-foreground">
+                          {section.label}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {section.desc}
+                        </p>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mt-8 rounded-xl border border-destructive/20 bg-destructive/5 p-6">
+                  <h3 className="text-sm font-semibold text-destructive">
+                    Zone de danger
+                  </h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Supprimer définitivement votre compte et toutes les données
+                    associées. Cette action est irréversible.
+                  </p>
+                  <div className="mt-4 flex items-center gap-3">
+                    <button className="rounded-lg border border-destructive/30 px-4 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive hover:text-white">
+                      Supprimer mon compte
+                    </button>
+                    <button
+                      onClick={() => {
+                        localStorage.removeItem("user");
+                        window.location.href = "/login";
+                      }}
+                      className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Se déconnecter
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+        </section >
+      </main >
       <Footer />
 
       {/* Modal de modification de profil */}
-      {showEditModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in fade-in zoom-in duration-200">
-            <div className="flex items-center justify-between border-b border-border p-6">
-              <h2 className="text-xl font-bold text-foreground">
-                Modifier le profil
-              </h2>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            <div className="p-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-1">
-                    Nom complet
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full rounded-lg border border-border bg-background p-2.5 text-sm text-foreground focus:border-[#2563eb] focus:outline-none"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-1">
-                    Email (non modifiable)
-                  </label>
-                  <input
-                    type="email"
-                    disabled
-                    className="w-full rounded-lg border border-border bg-muted p-2.5 text-sm text-muted-foreground cursor-not-allowed"
-                    value={user.email}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-1">
-                    Téléphone
-                  </label>
-                  <input
-                    type="tel"
-                    className="w-full rounded-lg border border-border bg-background p-2.5 text-sm text-foreground focus:border-[#2563eb] focus:outline-none"
-                    value={editPhone}
-                    placeholder="+33 6 00 00 00 00"
-                    onChange={(e) => setEditPhone(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-1">
-                    Localisation
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full rounded-lg border border-border bg-background p-2.5 text-sm text-foreground focus:border-[#2563eb] focus:outline-none"
-                    value={editLocation}
-                    placeholder="Ville, Pays"
-                    onChange={(e) => setEditLocation(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="mt-8 flex gap-3">
+      {
+        showEditModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in fade-in zoom-in duration-200">
+              <div className="flex items-center justify-between border-b border-border p-6">
+                <h2 className="text-xl font-bold text-foreground">
+                  Modifier le profil
+                </h2>
                 <button
                   onClick={() => setShowEditModal(false)}
-                  className="flex-1 rounded-lg border border-border py-2.5 text-sm font-medium text-foreground hover:bg-muted"
+                  className="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              <div className="p-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">
+                      Nom complet
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full rounded-lg border border-border bg-background p-2.5 text-sm text-foreground focus:border-[#2563eb] focus:outline-none"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">
+                      Email (non modifiable)
+                    </label>
+                    <input
+                      type="email"
+                      disabled
+                      className="w-full rounded-lg border border-border bg-muted p-2.5 text-sm text-muted-foreground cursor-not-allowed"
+                      value={user.email}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">
+                      Téléphone
+                    </label>
+                    <input
+                      type="tel"
+                      className="w-full rounded-lg border border-border bg-background p-2.5 text-sm text-foreground focus:border-[#2563eb] focus:outline-none"
+                      value={editPhone}
+                      placeholder="+33 6 00 00 00 00"
+                      onChange={(e) => setEditPhone(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">
+                      Localisation
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full rounded-lg border border-border bg-background p-2.5 text-sm text-foreground focus:border-[#2563eb] focus:outline-none"
+                      value={editLocation}
+                      placeholder="Ville, Pays"
+                      onChange={(e) => setEditLocation(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="mt-8 flex gap-3">
+                  <button
+                    onClick={() => setShowEditModal(false)}
+                    className="flex-1 rounded-lg border border-border py-2.5 text-sm font-medium text-foreground hover:bg-muted"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={handleSaveProfile}
+                    className="flex-1 rounded-lg bg-[#2563eb] py-2.5 text-sm font-medium text-white hover:bg-[#1d4ed8]"
+                  >
+                    Enregistrer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {/* New Conversation Modal */}
+      {
+        showNewConvModal && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-md rounded-2xl bg-card shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-200">
+              <div className="p-6 border-b border-border flex items-center justify-between bg-card/95 backdrop-blur-md sticky top-0">
+                <h3 className="text-lg font-bold text-foreground">Nouveau message</h3>
+                <button onClick={() => setShowNewConvModal(false)} className="p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="p-6">
+                <p className="text-sm text-muted-foreground mb-4">Choisissez un partenaire avec qui discuter :</p>
+                <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                  {partners.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground mt-2">Chargement des partenaires...</p>
+                    </div>
+                  ) : (
+                    partners.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => {
+                          setSelectedPartnerId(p.id);
+                          startNewConversation();
+                        }}
+                        className="w-full flex items-center gap-3 p-3 rounded-xl border border-border hover:border-[#2563eb] hover:bg-[#2563eb]/5 transition-all text-left"
+                      >
+                        <div className="h-10 w-10 rounded-full bg-[#2563eb]/10 flex items-center justify-center text-[#2563eb] font-bold text-sm shrink-0 uppercase">
+                          {p.business_name?.charAt(0)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm truncate">{p.business_name}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">{p.activity_type}</p>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {/* Offer Detail Modal */}
+      {
+        showDetailModal && selectedOffer && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 overflow-hidden">
+            <div className="w-full max-w-4xl max-h-[95vh] overflow-y-auto rounded-2xl sm:rounded-3xl bg-card shadow-2xl border border-border animate-in zoom-in-95 duration-200">
+              {/* Header Sticky */}
+              <div className="sticky top-0 z-30 flex items-center justify-between p-4 sm:p-6 border-b border-border bg-card/95 backdrop-blur-sm">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="hidden sm:flex h-12 w-12 rounded-xl bg-[#2563eb]/10 items-center justify-center text-[#2563eb]">
+                    <MapPin className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-base sm:text-xl font-bold truncate max-w-[150px] xs:max-w-[200px] sm:max-w-md">
+                      {selectedOffer.title}
+                    </h2>
+                    <p className="text-[10px] sm:text-sm text-muted-foreground capitalize">
+                      {selectedOffer.location} • {selectedOffer.type}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const isAlreadyFavorite = favorites.some((fav: any) => fav.id === selectedOffer.id);
+                      if (isAlreadyFavorite) {
+                        removeFromFavorites(selectedOffer.id);
+                      } else {
+                        toast.error("Veuillez utiliser la page des offres pour ajouter aux favoris.");
+                      }
+                    }}
+                    className={`h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-xl transition-colors ${favorites.some((fav: any) => fav.id === selectedOffer.id)
+                      ? "bg-red-50 text-red-500"
+                      : "bg-muted text-muted-foreground hover:text-foreground"
+                      }`}
+                  >
+                    <Heart className={`h-4 w-4 sm:h-5 sm:w-5 ${favorites.some((fav: any) => fav.id === selectedOffer.id) ? "fill-current" : ""}`} />
+                  </button>
+                  <button
+                    onClick={() => setShowDetailModal(false)}
+                    className="h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-xl hover:bg-muted text-muted-foreground transition-colors"
+                  >
+                    <X className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-4 sm:p-8 space-y-6 sm:space-y-8">
+                {/* Media Gallery (Preview) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-start">
+                  <div className="space-y-4">
+                    <div className="relative aspect-[16/9] rounded-xl sm:rounded-2xl overflow-hidden shadow-lg border border-border group">
+                      <img
+                        src={selectedOffer.images && selectedOffer.images.length > 0 ? getFileUrl(selectedOffer.images[0]) : "/images/placeholder.jpg"}
+                        alt={selectedOffer.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 bg-black/60 backdrop-blur-sm text-white text-[9px] sm:text-[10px] font-bold px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full uppercase tracking-wider">
+                        {selectedOffer.images?.length || 0} Photos
+                      </div>
+                    </div>
+
+                    {/* Thumbnail row */}
+                    {selectedOffer.images && selectedOffer.images.length > 1 && (
+                      <div className="grid grid-cols-4 gap-2 sm:gap-3">
+                        {selectedOffer.images.slice(1, 5).map((img: string, idx: number) => (
+                          <div key={idx} className="aspect-square rounded-lg sm:rounded-xl overflow-hidden border border-border ring-2 ring-transparent hover:ring-[#2563eb] transition-all cursor-pointer">
+                            <img
+                              src={getFileUrl(img)}
+                              className="w-full h-full object-cover"
+                              alt="thumb"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {selectedOffer.video && (
+                      <div className="rounded-xl sm:rounded-2xl border border-[#2563eb]/20 bg-[#2563eb]/5 p-4 sm:p-6 flex flex-col items-center gap-3 sm:gap-4 text-center">
+                        <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-full bg-[#2563eb] text-white flex items-center justify-center shadow-lg shadow-[#2563eb]/30">
+                          <Play className="h-4 w-4 sm:h-6 sm:w-6 fill-current" />
+                        </div>
+                        <div>
+                          <p className="text-sm sm:text-base font-bold">Vidéo disponible</p>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">Découvrez l'offre en mouvement</p>
+                        </div>
+                        <a
+                          href={getFileUrl(selectedOffer.video)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-5 py-2 sm:px-6 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#2563eb] text-white text-[11px] sm:text-xs font-bold hover:bg-[#1d4ed8] transition-all"
+                        >
+                          Regarder la vidéo
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-6 sm:space-y-8">
+                    <div className="space-y-3 sm:space-y-4">
+                      <h3 className="text-base sm:text-lg font-bold flex items-center gap-2">
+                        A propos de l'offre
+                      </h3>
+                      <div className="prose prose-sm text-muted-foreground leading-relaxed text-xs sm:text-sm">
+                        {selectedOffer.description || "Aucune description disponible pour le moment."}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                      <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-muted/30 border border-border">
+                        <p className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase mb-0.5 sm:mb-1">Prix de base</p>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-base sm:text-xl font-bold text-[#2563eb]">{selectedOffer.price}</span>
+                          <span className="text-[10px] sm:text-xs font-bold">{selectedOffer.currency}</span>
+                        </div>
+                      </div>
+                      <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-green-500/5 border border-green-500/10">
+                        <p className="text-[9px] sm:text-[10px] font-bold text-green-600 uppercase mb-0.5 sm:mb-1">Disponibilité</p>
+                        <p className="text-xs sm:text-sm font-bold text-green-700">Immédiate</p>
+                      </div>
+                    </div>
+
+                    <div className="p-5 sm:p-6 rounded-xl sm:rounded-2xl bg-[#2563eb] text-white space-y-4 shadow-xl shadow-[#2563eb]/20">
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl bg-white/20 flex items-center justify-center">
+                          <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] sm:text-xs text-white/70 font-bold uppercase">Réservation</p>
+                          <p className="text-xs sm:text-sm font-bold">Planifiez votre visite</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleBooking(selectedOffer.offer_id || selectedOffer.id)}
+                        disabled={reservations.some(r => (r.offer_id === (selectedOffer.offer_id || selectedOffer.id)) && r.status !== 'cancelled')}
+                        className={`w-full py-3 sm:py-4 rounded-lg sm:rounded-xl text-[12px] sm:text-sm font-bold transition-all flex items-center justify-center gap-2 group ${reservations.some(r => (r.offer_id === (selectedOffer.offer_id || selectedOffer.id)) && r.status !== 'cancelled')
+                          ? "bg-gray-400 text-white cursor-not-allowed"
+                          : "bg-white text-[#2563eb] hover:bg-white/90"
+                          }`}
+                      >
+                        {reservations.some(r => (r.offer_id === (selectedOffer.offer_id || selectedOffer.id)) && r.status !== 'cancelled') ? "Déjà réservé" : "Réserver"}
+                        {!reservations.some(r => (r.offer_id === (selectedOffer.offer_id || selectedOffer.id)) && r.status !== 'cancelled') && <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />}
+                      </button>
+                      <p className="text-[9px] sm:text-[10px] text-center text-white/60">
+                        En cliquant sur le bouton, vous enregistrez votre réservation auprès du partenaire.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="sticky bottom-0 p-4 sm:p-6 border-t border-border bg-card/95 backdrop-blur-sm flex items-center justify-end">
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="w-full sm:w-auto px-8 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-[12px] sm:text-sm font-bold border border-border hover:bg-muted transition-colors"
+                >
+                  Fermer
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {/* Delete Confirmation Modal */}
+      {
+        showDeleteModal && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+            <div className="w-full max-w-md overflow-hidden rounded-2xl bg-card shadow-2xl border border-border animate-in zoom-in-95 duration-200">
+              <div className="p-6 text-center space-y-4">
+                <div className="mx-auto h-16 w-16 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+                  <Trash2 className="h-8 w-8" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground">Confirmation de suppression</h3>
+                <p className="text-muted-foreground text-sm">
+                  Êtes-vous sûr de vouloir supprimer cette réservation ? Cette action est irréversible.
+                </p>
+              </div>
+              <div className="flex gap-3 p-6 bg-muted/30 border-t border-border">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setReservationToDelete(null);
+                  }}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-bold hover:bg-muted transition-colors"
                 >
                   Annuler
                 </button>
                 <button
-                  onClick={handleSaveProfile}
-                  className="flex-1 rounded-lg bg-[#2563eb] py-2.5 text-sm font-medium text-white hover:bg-[#1d4ed8]"
+                  onClick={handleDeleteReservation}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20"
                 >
-                  Enregistrer
+                  Supprimer
                 </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Offer Detail Modal */}
-      {showDetailModal && selectedOffer && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 overflow-hidden">
-          <div className="w-full max-w-4xl max-h-[95vh] overflow-y-auto rounded-2xl sm:rounded-3xl bg-card shadow-2xl border border-border animate-in zoom-in-95 duration-200">
-            {/* Header Sticky */}
-            <div className="sticky top-0 z-30 flex items-center justify-between p-4 sm:p-6 border-b border-border bg-card/95 backdrop-blur-sm">
-              <div className="flex items-center gap-3 sm:gap-4">
-                <div className="hidden sm:flex h-12 w-12 rounded-xl bg-[#2563eb]/10 items-center justify-center text-[#2563eb]">
-                  <MapPin className="h-6 w-6" />
-                </div>
-                <div>
-                  <h2 className="text-base sm:text-xl font-bold truncate max-w-[150px] xs:max-w-[200px] sm:max-w-md">
-                    {selectedOffer.title}
-                  </h2>
-                  <p className="text-[10px] sm:text-sm text-muted-foreground capitalize">
-                    {selectedOffer.location} • {selectedOffer.type}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    const isAlreadyFavorite = favorites.some((fav: any) => fav.id === selectedOffer.id);
-                    if (isAlreadyFavorite) {
-                      removeFromFavorites(selectedOffer.id);
-                    } else {
-                      toast.error("Veuillez utiliser la page des offres pour ajouter aux favoris.");
-                    }
-                  }}
-                  className={`h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-xl transition-colors ${favorites.some((fav: any) => fav.id === selectedOffer.id)
-                    ? "bg-red-50 text-red-500"
-                    : "bg-muted text-muted-foreground hover:text-foreground"
-                    }`}
-                >
-                  <Heart className={`h-4 w-4 sm:h-5 sm:w-5 ${favorites.some((fav: any) => fav.id === selectedOffer.id) ? "fill-current" : ""}`} />
-                </button>
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-xl hover:bg-muted text-muted-foreground transition-colors"
-                >
-                  <X className="h-4 w-4 sm:h-5 sm:w-5" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-4 sm:p-8 space-y-6 sm:space-y-8">
-              {/* Media Gallery (Preview) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-start">
-                <div className="space-y-4">
-                  <div className="relative aspect-[16/9] rounded-xl sm:rounded-2xl overflow-hidden shadow-lg border border-border group">
-                    <img
-                      src={selectedOffer.images && selectedOffer.images.length > 0 ? getFileUrl(selectedOffer.images[0]) : "/images/placeholder.jpg"}
-                      alt={selectedOffer.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 bg-black/60 backdrop-blur-sm text-white text-[9px] sm:text-[10px] font-bold px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full uppercase tracking-wider">
-                      {selectedOffer.images?.length || 0} Photos
-                    </div>
-                  </div>
-
-                  {/* Thumbnail row */}
-                  {selectedOffer.images && selectedOffer.images.length > 1 && (
-                    <div className="grid grid-cols-4 gap-2 sm:gap-3">
-                      {selectedOffer.images.slice(1, 5).map((img: string, idx: number) => (
-                        <div key={idx} className="aspect-square rounded-lg sm:rounded-xl overflow-hidden border border-border ring-2 ring-transparent hover:ring-[#2563eb] transition-all cursor-pointer">
-                          <img
-                            src={getFileUrl(img)}
-                            className="w-full h-full object-cover"
-                            alt="thumb"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {selectedOffer.video && (
-                    <div className="rounded-xl sm:rounded-2xl border border-[#2563eb]/20 bg-[#2563eb]/5 p-4 sm:p-6 flex flex-col items-center gap-3 sm:gap-4 text-center">
-                      <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-full bg-[#2563eb] text-white flex items-center justify-center shadow-lg shadow-[#2563eb]/30">
-                        <Play className="h-4 w-4 sm:h-6 sm:w-6 fill-current" />
-                      </div>
-                      <div>
-                        <p className="text-sm sm:text-base font-bold">Vidéo disponible</p>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">Découvrez l'offre en mouvement</p>
-                      </div>
-                      <a
-                        href={getFileUrl(selectedOffer.video)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-5 py-2 sm:px-6 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#2563eb] text-white text-[11px] sm:text-xs font-bold hover:bg-[#1d4ed8] transition-all"
-                      >
-                        Regarder la vidéo
-                      </a>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-6 sm:space-y-8">
-                  <div className="space-y-3 sm:space-y-4">
-                    <h3 className="text-base sm:text-lg font-bold flex items-center gap-2">
-                      A propos de l'offre
-                    </h3>
-                    <div className="prose prose-sm text-muted-foreground leading-relaxed text-xs sm:text-sm">
-                      {selectedOffer.description || "Aucune description disponible pour le moment."}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                    <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-muted/30 border border-border">
-                      <p className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase mb-0.5 sm:mb-1">Prix de base</p>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-base sm:text-xl font-bold text-[#2563eb]">{selectedOffer.price}</span>
-                        <span className="text-[10px] sm:text-xs font-bold">{selectedOffer.currency}</span>
-                      </div>
-                    </div>
-                    <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-green-500/5 border border-green-500/10">
-                      <p className="text-[9px] sm:text-[10px] font-bold text-green-600 uppercase mb-0.5 sm:mb-1">Disponibilité</p>
-                      <p className="text-xs sm:text-sm font-bold text-green-700">Immédiate</p>
-                    </div>
-                  </div>
-
-                  <div className="p-5 sm:p-6 rounded-xl sm:rounded-2xl bg-[#2563eb] text-white space-y-4 shadow-xl shadow-[#2563eb]/20">
-                    <div className="flex items-center gap-3">
-                      <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl bg-white/20 flex items-center justify-center">
-                        <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] sm:text-xs text-white/70 font-bold uppercase">Réservation</p>
-                        <p className="text-xs sm:text-sm font-bold">Planifiez votre visite</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleBooking(selectedOffer.offer_id || selectedOffer.id)}
-                      disabled={reservations.some(r => (r.offer_id === (selectedOffer.offer_id || selectedOffer.id)) && r.status !== 'cancelled')}
-                      className={`w-full py-3 sm:py-4 rounded-lg sm:rounded-xl text-[12px] sm:text-sm font-bold transition-all flex items-center justify-center gap-2 group ${reservations.some(r => (r.offer_id === (selectedOffer.offer_id || selectedOffer.id)) && r.status !== 'cancelled')
-                        ? "bg-gray-400 text-white cursor-not-allowed"
-                        : "bg-white text-[#2563eb] hover:bg-white/90"
-                        }`}
-                    >
-                      {reservations.some(r => (r.offer_id === (selectedOffer.offer_id || selectedOffer.id)) && r.status !== 'cancelled') ? "Déjà réservé" : "Réserver"}
-                      {!reservations.some(r => (r.offer_id === (selectedOffer.offer_id || selectedOffer.id)) && r.status !== 'cancelled') && <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />}
-                    </button>
-                    <p className="text-[9px] sm:text-[10px] text-center text-white/60">
-                      En cliquant sur le bouton, vous enregistrez votre réservation auprès du partenaire.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="sticky bottom-0 p-4 sm:p-6 border-t border-border bg-card/95 backdrop-blur-sm flex items-center justify-end">
-              <button
-                onClick={() => setShowDetailModal(false)}
-                className="w-full sm:w-auto px-8 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-[12px] sm:text-sm font-bold border border-border hover:bg-muted transition-colors"
-              >
-                Fermer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md overflow-hidden rounded-2xl bg-card shadow-2xl border border-border animate-in zoom-in-95 duration-200">
-            <div className="p-6 text-center space-y-4">
-              <div className="mx-auto h-16 w-16 rounded-full bg-red-100 flex items-center justify-center text-red-600">
-                <Trash2 className="h-8 w-8" />
-              </div>
-              <h3 className="text-xl font-bold text-foreground">Confirmation de suppression</h3>
-              <p className="text-muted-foreground text-sm">
-                Êtes-vous sûr de vouloir supprimer cette réservation ? Cette action est irréversible.
-              </p>
-            </div>
-            <div className="flex gap-3 p-6 bg-muted/30 border-t border-border">
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setReservationToDelete(null);
-                }}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-bold hover:bg-muted transition-colors"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleDeleteReservation}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20"
-              >
-                Supprimer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 }
