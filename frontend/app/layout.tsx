@@ -21,6 +21,7 @@ export const viewport: Viewport = {
 
 import { Toaster } from "@/components/ui/sonner"
 import { GoogleOAuthProvider } from "@react-oauth/google"
+import { AIAssistant } from "@/components/ai-assistant"
 
 export default function RootLayout({
   children,
@@ -36,6 +37,7 @@ export default function RootLayout({
         <GoogleOAuthProvider clientId={googleClientId}>
           {children}
           <Toaster richColors />
+          <AIAssistant />
           <Analytics />
         </GoogleOAuthProvider>
       </body>
