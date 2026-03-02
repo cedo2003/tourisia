@@ -86,6 +86,10 @@ try {
         ':selected_plan' => $data['selected_plan'] ?? 'Gratuit'
     ]);
 
+    // Notification for the user
+    $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, type, title, content, link) VALUES (?, 'system', 'Demande de partenariat envoyée 🤝', 'Votre demande de partenariat pour \"" . ($data['business_name'] ?? '') . "\" a été enregistrée. Elle est en attente de validation.', '/profile')");
+    $notifStmt->execute([$data['user_id']]);
+
     http_response_code(201);
     echo json_encode(["message" => "Demande de partenariat enregistrée avec succès."]);
 

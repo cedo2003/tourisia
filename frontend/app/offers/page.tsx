@@ -24,6 +24,7 @@ import {
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toast } from "sonner";
+import { AddToItineraryButton } from "@/components/itinerary/add-to-itinerary-button";
 
 // Categories are now standard
 const categories = [
@@ -370,13 +371,16 @@ export default function OffersPage() {
 
                     <div className="mt-auto pt-3 sm:pt-4">
                       <div className="flex items-center justify-between border-t border-border pt-3">
-                        <div className="flex items-baseline gap-0.5 sm:gap-1">
-                          <span className="text-sm sm:text-lg font-bold text-[#2563eb]">
-                            {offer.price}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground font-medium uppercase">
-                            {offer.currency}
-                          </span>
+                        <div className="flex flex-col">
+                          <div className="flex items-baseline gap-0.5 sm:gap-1">
+                            <span className="text-sm sm:text-lg font-bold text-[#2563eb]">
+                              {offer.price}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground font-medium uppercase">
+                              {offer.currency}
+                            </span>
+                          </div>
+                          <AddToItineraryButton offerId={offer.id} />
                         </div>
                         <button
                           onClick={() => {
@@ -505,6 +509,7 @@ export default function OffersPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                <AddToItineraryButton offerId={selectedOffer.id} />
                 {selectedOffer.partner_id !== userPartnerId && (
                   <button
                     onClick={() => toggleFavorite(selectedOffer.id)}

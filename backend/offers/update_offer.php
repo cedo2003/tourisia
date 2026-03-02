@@ -48,6 +48,18 @@ try {
         ':video' => $data['video'] ?? null
     ]);
 
+    // Notification
+    $userStmt = $pdo->prepare("SELECT user_id FROM partners WHERE id = ?");
+    $userStmt->execute([$data['partner_id']]);
+    $partnerUser = $userStmt->fetch();
+    if ($partnerUser) {
+        $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, type, title, content, link) VALUES (?, 'system', 'Publication modifiée ✏️', ?, '/espace_partenaire')");
+        $notifStmt->execute([
+            $partnerUser['user_id'],
+            "Votre offre \"{$data['title']}\" a été mise à jour."
+        ]);
+    }
+
     echo json_encode([
         "success" => true,
         "message" => "Offre mise à jour avec succès !"

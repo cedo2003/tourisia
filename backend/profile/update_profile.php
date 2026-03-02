@@ -64,6 +64,10 @@ try {
     $stmt = $pdo->prepare($query);
 
     if ($stmt->execute($params)) {
+        // Create notification
+        $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, type, title, content, link) VALUES (?, 'system', 'Profil mis à jour ✏️', 'Vos informations personnelles ont été modifiées avec succès.', '/profile')");
+        $notifStmt->execute([$data->id]);
+
         http_response_code(200);
         echo json_encode(["message" => "Profil mis à jour avec succès."]);
     } else {

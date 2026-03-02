@@ -65,10 +65,24 @@ try {
     ]);
 
     http_response_code(201);
+    $newOfferId = $pdo->lastInsertId();
+
+    // Notification for the partner's user account
+    $userStmt = $pdo->prepare("SELECT user_id FROM partners WHERE id = ?");
+    $userStmt->execute([$data['partner_id']]);
+    $partnerUser = $userStmt->fetch();
+    if ($partnerUser) {
+        $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, type, title, content, link) VALUES (?, 'system', 'Nouvelle publication 📢', ?, '/espace_partenaire')");
+        $notifStmt->execute([
+            $partnerUser['user_id'],
+            "Votre offre \"{$data['title']}\" a été publiée avec succès."
+        ]);
+    }
+
     echo json_encode([
         "success" => true,
         "message" => "Offre créée avec succès !",
-        "offer_id" => $pdo->lastInsertId()
+        "offer_id" => $newOfferId
     ]);
 
 } catch (Exception $e) {

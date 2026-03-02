@@ -53,7 +53,17 @@ try {
         $stmt->bindParam(':password', $password_hash);
 
         if ($stmt->execute()) {
+            $newUserId = $pdo->lastInsertId();
             sendWelcomeEmail($email, $fullname);
+
+            // Welcome notification
+            $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, type, title, content, link) VALUES (?, 'system', ?, ?, '/profile')");
+            $notifStmt->execute([
+                $newUserId,
+                "Bienvenue sur Tourisia ! 🎉",
+                "Bonjour $fullname ! Votre compte a été créé avec succès. Explorez nos offres et commencez à planifier votre prochain voyage."
+            ]);
+
             http_response_code(201);
             echo json_encode(["message" => "Utilisateur créé avec succès."]);
         } else {

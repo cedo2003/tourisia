@@ -27,6 +27,26 @@ try {
         ':id' => $data->partner_id
     ]);
 
+    // Notify the partner's user account
+    $partnerStmt = $pdo->prepare("SELECT user_id, business_name FROM partners WHERE id = ?");
+    $partnerStmt->execute([$data->partner_id]);
+    $partnerInfo = $partnerStmt->fetch();
+    if ($partnerInfo) {
+        if ($data->status == 1) {
+            $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, type, title, content, link) VALUES (?, 'system', 'Compte partenaire validé ✅', ?, '/espace_partenaire')");
+            $notifStmt->execute([
+                $partnerInfo['user_id'],
+                "Félicitations ! Votre compte partenaire \"{$partnerInfo['business_name']}\" a été validé. Vous pouvez maintenant publier vos offres."
+            ]);
+        } else {
+            $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, type, title, content, link) VALUES (?, 'system', 'Statut partenaire modifié ⚠️', ?, '/profile')");
+            $notifStmt->execute([
+                $partnerInfo['user_id'],
+                "Le statut de votre compte partenaire \"{$partnerInfo['business_name']}\" a été modifié par l'administration."
+            ]);
+        }
+    }
+
     echo json_encode(["message" => "Statut mis à jour avec succès."]);
 
 } catch (Exception $e) {

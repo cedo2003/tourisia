@@ -37,13 +37,42 @@ try {
 
         if ($favorite) {
             // Remove from favorites
+            // Get offer title first
+            $offerStmt = $pdo->prepare("SELECT title FROM offers WHERE id = ?");
+            $offerStmt->execute([$data->offer_id]);
+            $offer = $offerStmt->fetch();
+            $offerTitle = $offer ? $offer['title'] : 'une offre';
+
             $stmt = $pdo->prepare("DELETE FROM favorites WHERE user_id = ? AND offer_id = ?");
             $stmt->execute([$data->user_id, $data->offer_id]);
+
+            // Notification
+            $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, type, title, content, link) VALUES (?, 'favorite', ?, ?, '/profile?tab=wishlist')");
+            $notifStmt->execute([
+                $data->user_id,
+                "Retiré des favoris 💔",
+                "\"$offerTitle\" a été retiré de vos favoris."
+            ]);
+
             echo json_encode(["message" => "Retiré des favoris.", "is_favorite" => false]);
         } else {
             // Add to favorites
             $stmt = $pdo->prepare("INSERT INTO favorites (user_id, offer_id) VALUES (?, ?)");
             $stmt->execute([$data->user_id, $data->offer_id]);
+
+            // Create notification
+            $offerStmt = $pdo->prepare("SELECT title FROM offers WHERE id = ?");
+            $offerStmt->execute([$data->offer_id]);
+            $offer = $offerStmt->fetch();
+            $offerTitle = $offer ? $offer['title'] : 'une offre';
+
+            $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, type, title, content, link) VALUES (?, 'favorite', ?, ?, '/profile?tab=wishlist')");
+            $notifStmt->execute([
+                $data->user_id,
+                "Ajouté aux favoris ❤️",
+                "Vous avez ajouté \"$offerTitle\" à vos favoris."
+            ]);
+
             echo json_encode(["message" => "Ajouté aux favoris.", "is_favorite" => true]);
         }
     } else {

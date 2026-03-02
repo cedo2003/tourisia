@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";
+import { NotificationBell } from "@/components/notification-bell";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -182,6 +183,7 @@ export function Navbar() {
 
             {user ? (
               <div className="flex items-center gap-4 ml-2 pl-4 border-l border-border">
+                <NotificationBell />
                 <Link
                   href="/profile"
                   className="flex items-center gap-2 hover:opacity-80 transition-opacity"
@@ -243,18 +245,20 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Mobile menu button */}
-          <button
-            className="md:hidden"
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label="Toggle navigation menu"
-          >
-            {mobileOpen ? (
-              <X className="h-6 w-6 text-foreground" />
-            ) : (
-              <Menu className="h-6 w-6 text-foreground" />
-            )}
-          </button>
+          {/* Mobile: bell + menu button */}
+          <div className="flex items-center gap-4 md:hidden">
+            {user && <NotificationBell />}
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label="Toggle navigation menu"
+            >
+              {mobileOpen ? (
+                <X className="h-6 w-6 text-foreground" />
+              ) : (
+                <Menu className="h-6 w-6 text-foreground" />
+              )}
+            </button>
+          </div>
         </nav>
 
         {/* Mobile menu */}

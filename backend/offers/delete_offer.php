@@ -28,6 +28,16 @@ try {
     ]);
 
     if ($stmt->rowCount() > 0) {
+        // Get offer title for notification
+        // (already deleted, so we notify with generic text)
+        $userStmt = $pdo->prepare("SELECT user_id FROM partners WHERE id = ?");
+        $userStmt->execute([$data['partner_id']]);
+        $partnerUser = $userStmt->fetch();
+        if ($partnerUser) {
+            $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, type, title, content, link) VALUES (?, 'system', 'Publication supprimée 🗑️', 'Une de vos offres a été supprimée.', '/espace_partenaire')");
+            $notifStmt->execute([$partnerUser['user_id']]);
+        }
+
         echo json_encode([
             "success" => true,
             "message" => "Offre supprimée avec succès !"

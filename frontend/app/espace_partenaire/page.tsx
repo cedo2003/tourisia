@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
+import { NotificationBell } from "@/components/notification-bell";
 import {
   LayoutDashboard,
   Package,
@@ -675,6 +676,7 @@ export default function PartnerDashboard() {
                   ? "Validation en attente"
                   : "Compte Validé"}
               </div>
+              <NotificationBell />
               <button
                 onClick={handleLogout}
                 className="flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium hover:bg-muted transition-colors text-destructive ml-auto md:ml-0"

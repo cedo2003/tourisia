@@ -43,7 +43,9 @@ import {
   MessageSquare,
   Send,
   ArrowLeft,
+  Notebook as Journal,
 } from "lucide-react";
+import { ItineraryList } from "@/components/itinerary/itinerary-list";
 
 /* ─── DONNÉES MOCK (exemples) ─── */
 const badges = [
@@ -173,6 +175,7 @@ const settingsSections = [
 /* ─── ONGLETS ─── */
 const tabs = [
   { id: "overview", label: "Aperçu" },
+  { id: "itineraries", label: "Mes Carnets" },
   { id: "wishlist", label: "Favoris" },
   { id: "reviews", label: "Avis" },
   { id: "messagerie", label: "Messagerie" },
@@ -1118,6 +1121,17 @@ function ProfileContent() {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* ══════════════════ MES CARNETS (ITINÉRAIRES) ══════════════════ */}
+          {activeTab === "itineraries" && (
+            <div className="animate-in fade-in duration-500">
+              <div className="mb-8">
+                <h2 className="text-xl font-bold text-foreground">Mes Carnets de Voyage</h2>
+                <p className="text-sm text-muted-foreground mt-1">Regroupez vos offres préférées pour organiser votre séjour idéal.</p>
+              </div>
+              <ItineraryList />
             </div>
           )}
 

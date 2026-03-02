@@ -43,8 +43,46 @@ try {
         "INSERT INTO messages (sender_id, receiver_id, sender_type, message) VALUES (?, ?, ?, ?)"
     );
     $stmt->execute([$sender_id, $receiver_id, $sender_type, $message]);
+    $messageId = $pdo->lastInsertId();
 
-    echo json_encode(["success" => true, "message_id" => $pdo->lastInsertId()]);
+    // Create notification for receiver
+    if ($sender_type === 'user') {
+        // User sent to partner → notify the partner's user account
+        // Find the user_id linked to this partner
+        $partnerStmt = $pdo->prepare("SELECT user_id, company_name FROM partners WHERE id = ?");
+        $partnerStmt->execute([$receiver_id]);
+        $partner = $partnerStmt->fetch();
+        if ($partner) {
+            $senderStmt = $pdo->prepare("SELECT fullname FROM users WHERE id = ?");
+            $senderStmt->execute([$sender_id]);
+            $senderUser = $senderStmt->fetch();
+            $senderName = $senderUser ? $senderUser['fullname'] : 'Un utilisateur';
+
+            $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, type, title, content, link) VALUES (?, 'message', ?, ?, ?)");
+            $notifStmt->execute([
+                $partner['user_id'],
+                "Nouveau message 💬",
+                "$senderName vous a envoyé un message.",
+                "/espace_partenaire?tab=messagerie"
+            ]);
+        }
+    } else {
+        // Partner sent to user → notify the user directly
+        $partnerStmt = $pdo->prepare("SELECT company_name FROM partners WHERE id = ?");
+        $partnerStmt->execute([$sender_id]);
+        $partner = $partnerStmt->fetch();
+        $partnerName = $partner ? $partner['company_name'] : 'Un partenaire';
+
+        $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, type, title, content, link) VALUES (?, 'message', ?, ?, ?)");
+        $notifStmt->execute([
+            $receiver_id,
+            "Nouveau message 💬",
+            "$partnerName vous a envoyé un message.",
+            "/profile?tab=messagerie&partner_id=$sender_id"
+        ]);
+    }
+
+    echo json_encode(["success" => true, "message_id" => $messageId]);
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode(["error" => $e->getMessage()]);
