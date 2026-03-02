@@ -47,6 +47,11 @@ import {
   Notebook as Journal,
   Sun,
   Moon,
+  Sparkles,
+  Wind,
+  Mountain,
+  Palmtree,
+  Zap,
 } from "lucide-react";
 import { ItineraryList } from "@/components/itinerary/itinerary-list";
 
@@ -875,258 +880,180 @@ function ProfileContent() {
         <section className="mx-auto max-w-7xl px-4 py-8 lg:px-8">
           {/* ══════════════════ APERÇU ══════════════════ */}
           {activeTab === "overview" && (
-            <div className="grid gap-6 lg:grid-cols-3">
-              {/* Colonne gauche */}
-              <div className="flex flex-col gap-6 lg:col-span-2">
-                {/* Bio */}
-                <div className="rounded-2xl border border-border bg-card p-6">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-foreground">
-                      À propos
-                    </h2>
-                    <button
-                      onClick={() => {
-                        if (isEditing) setEditedBio(user.bio || "");
-                        setIsEditing(!isEditing);
-                      }}
-                      className="flex items-center gap-1.5 text-xs font-medium text-[#2563eb] hover:text-[#1d4ed8]"
-                    >
-                      {isEditing ? (
-                        <>
-                          <X className="h-3.5 w-3.5" /> Annuler
-                        </>
-                      ) : (
-                        <>
-                          <Edit3 className="h-3.5 w-3.5" /> Modifier
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  {isEditing ? (
-                    <div className="mt-3">
-                      <textarea
-                        value={editedBio}
-                        onChange={(e) => setEditedBio(e.target.value)}
-                        rows={3}
-                        className="w-full resize-none rounded-lg border border-border bg-background p-3 text-sm text-foreground leading-relaxed focus:border-[#2563eb] focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20"
-                      />
-                      <div className="mt-2 flex justify-end gap-2">
-                        <button
-                          onClick={() => setIsEditing(false)}
-                          className="rounded-lg border border-border px-4 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
-                        >
-                          Annuler
-                        </button>
-                        <button
-                          onClick={handleSaveBio}
-                          className="rounded-lg bg-[#2563eb] px-4 py-1.5 text-xs font-medium text-white hover:bg-[#1d4ed8]"
-                        >
-                          Enregistrer
-                        </button>
+            <div className="flex flex-col gap-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+              {/* Section Bio & Inspiration Wall */}
+              <div className="grid gap-8 lg:grid-cols-3">
+                {/* Colonne Gauche: Bio (Mise en avant) */}
+                <div className="lg:col-span-1">
+                  <div className="h-full rounded-[2rem] border border-border bg-card p-8 shadow-sm transition-all hover:shadow-md">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-xl font-bold text-foreground font-display flex items-center gap-2">
+                        <User className="h-5 w-5 text-[#2563eb]" />
+                        Bio
+                      </h2>
+                      <button
+                        onClick={() => {
+                          if (isEditing) setEditedBio(user.bio || "");
+                          setIsEditing(!isEditing);
+                        }}
+                        className="p-2.5 rounded-2xl hover:bg-muted transition-all text-[#2563eb] active:scale-90"
+                      >
+                        {isEditing ? <X className="h-4 w-4" /> : <Edit3 className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    {isEditing ? (
+                      <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                        <textarea
+                          value={editedBio}
+                          onChange={(e) => setEditedBio(e.target.value)}
+                          rows={6}
+                          className="w-full resize-none rounded-2xl border border-border bg-background p-5 text-sm text-foreground leading-relaxed focus:border-[#2563eb] focus:outline-none focus:ring-4 focus:ring-[#2563eb]/10 transition-all font-medium"
+                          placeholder="Racontez-nous votre vision du voyage..."
+                        />
+                        <div className="mt-4 flex justify-end gap-3">
+                          <button
+                            onClick={() => setIsEditing(false)}
+                            className="rounded-xl px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted transition-colors border border-border"
+                          >
+                            Annuler
+                          </button>
+                          <button
+                            onClick={handleSaveBio}
+                            className="rounded-xl bg-[#2563eb] px-5 py-2 text-xs font-bold text-white hover:bg-[#1d4ed8] shadow-lg shadow-[#2563eb]/20 transition-all active:scale-95"
+                          >
+                            Enregistrer
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-                      {editedBio || "Aucune bio renseignée."}
-                    </p>
-                  )}
-
-                  {/* Infos contact */}
-                  <div className="mt-5 flex flex-wrap gap-4 border-t border-border pt-5">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Mail className="h-4 w-4 text-[#2563eb]" />
-                      {user.email}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Phone className="h-4 w-4 text-[#2563eb]" />
-                      {user.phone || "Non spécifié"}
-                    </div>
+                    ) : (
+                      <div className="space-y-6">
+                        <div className="relative">
+                          <span className="absolute -left-2 -top-2 text-4xl text-[#2563eb]/10 font-serif">"</span>
+                          <p className="text-sm text-muted-foreground leading-relaxed italic font-medium pt-2 px-2">
+                            {editedBio || "Partagez votre philosophie de voyage avec la communauté Tourisia et laissez votre trace..."}
+                          </p>
+                        </div>
+                        <div className="flex flex-col gap-4 pt-6 border-t border-border/50">
+                           <div className="group flex items-center gap-3 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+                              <div className="h-9 w-9 rounded-xl bg-[#2563eb]/10 flex items-center justify-center transition-transform group-hover:scale-110">
+                                <Mail className="h-4 w-4 text-[#2563eb]" />
+                              </div>
+                              {user.email}
+                           </div>
+                           <div className="group flex items-center gap-3 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+                              <div className="h-9 w-9 rounded-xl bg-[#2563eb]/10 flex items-center justify-center transition-transform group-hover:scale-110">
+                                <Phone className="h-4 w-4 text-[#2563eb]" />
+                              </div>
+                              {user.phone || "Non renseigné"}
+                           </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Voyages à venir */}
-                <div className="rounded-2xl border border-border bg-card p-6">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-foreground">
-                      Voyages à venir
+                {/* Mur d'Inspiration (Mood Board) Style Masonry */}
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <h2 className="text-xl font-bold text-foreground font-display flex items-center gap-2">
+                       <Sparkles className="h-5 w-5 text-amber-500 animate-pulse" />
+                       Carnet de Rêves
                     </h2>
-                    <button
-                      onClick={() => setActiveTab("trips")}
-                      className="flex items-center gap-1 text-xs font-medium text-[#2563eb] hover:text-[#1d4ed8]"
-                    >
-                      Voir tous <ChevronRight className="h-3.5 w-3.5" />
-                    </button>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#2563eb] bg-[#2563eb]/5 px-3 py-1 rounded-full">Vision Board</span>
                   </div>
-                  <div className="mt-4 flex flex-col gap-3">
-                    {upcomingTrips.map((trip) => (
-                      <div
-                        key={trip.id}
-                        className="flex items-center gap-4 rounded-xl border border-border p-3 transition-colors hover:bg-muted/50"
-                      >
-                        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg">
-                          <Image
-                            src={trip.image}
-                            alt={trip.destination}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="text-sm font-semibold text-foreground">
-                            {trip.destination}
-                          </h3>
-                          <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                            <Clock className="h-3 w-3" />
-                            {trip.dates}
-                          </div>
-                        </div>
-                        <span
-                          className={`rounded-full ${trip.statusColor} px-2.5 py-1 text-xs font-medium text-white`}
-                        >
-                          {trip.status}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Aperçu voyages passés */}
-                <div className="rounded-2xl border border-border bg-card p-6">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-foreground">
-                      Voyages récents
-                    </h2>
-                    <button
-                      onClick={() => setActiveTab("trips")}
-                      className="flex items-center gap-1 text-xs font-medium text-[#2563eb] hover:text-[#1d4ed8]"
-                    >
-                      Voir tous <ChevronRight className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    {pastTrips.slice(0, 2).map((trip) => (
-                      <div
-                        key={trip.id}
-                        className="group overflow-hidden rounded-xl border border-border bg-card transition-all hover:shadow-md"
-                      >
-                        <div className="relative aspect-[16/10] overflow-hidden">
-                          <Image
-                            src={trip.image}
-                            alt={trip.destination}
-                            fill
-                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent" />
-                          <div className="absolute bottom-3 left-3">
-                            <h3 className="text-sm font-semibold text-white">
-                              {trip.destination}
-                            </h3>
-                            <p className="text-xs text-white/80">
-                              {trip.location}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between p-3">
-                          <StarDisplay rating={trip.rating} />
-                          {trip.reviewed ? (
-                            <span className="text-xs text-emerald-600 font-medium">
-                              Avis publié
-                            </span>
-                          ) : (
-                            <button className="text-xs font-medium text-[#2563eb] hover:text-[#1d4ed8]">
-                              Publier un avis
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                  
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-5 auto-rows-[130px]">
+                    <div className="row-span-2 group relative overflow-hidden rounded-[2.5rem] border-4 border-card shadow-2xl transition-all hover:scale-[1.02] active:scale-95">
+                       <Image src="/images/santorini.jpg" alt="Santorin" fill className="object-cover transition-transform duration-1000 group-hover:scale-110" />
+                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                       <div className="absolute bottom-6 left-6 text-white transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">
+                          <p className="text-[10px] font-bold uppercase tracking-tighter opacity-70">Grèce</p>
+                          <p className="text-sm font-bold">L'Éclat Blanc</p>
+                       </div>
+                    </div>
+                    <div className="row-span-1 group relative overflow-hidden rounded-[2.5rem] border-4 border-card shadow-xl transition-all hover:scale-[1.02] active:scale-95">
+                       <Image src="/images/amazone.jpg" alt="Amazonie" fill className="object-cover transition-transform duration-1000 group-hover:scale-110" />
+                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    </div>
+                    <div className="row-span-2 group relative overflow-hidden rounded-[2.5rem] border-4 border-card shadow-2xl transition-all hover:scale-[1.02] active:scale-95">
+                       <Image src="/images/ganvie.jpg" alt="Ganvié" fill className="object-cover transition-transform duration-1000 group-hover:scale-110" />
+                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                       <div className="absolute bottom-6 left-6 text-white transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">
+                          <p className="text-[10px] font-bold uppercase tracking-tighter opacity-70">Bénin</p>
+                          <p className="text-sm font-bold">Venise d'Afrique</p>
+                       </div>
+                    </div>
+                    <div className="row-span-1 group relative overflow-hidden rounded-[2.5rem] border-4 border-card shadow-xl transition-all hover:scale-[1.02] active:scale-95">
+                       <Image src="/images/porte.jpg" alt="Inspiration" fill className="object-cover transition-transform duration-1000 group-hover:scale-110" />
+                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Colonne droite */}
-              <div className="flex flex-col gap-6">
-                {/* Badges */}
-                <div className="rounded-2xl border border-border bg-card p-6">
-                  <h2 className="text-lg font-semibold text-foreground">
-                    Badges
-                  </h2>
-                  <div className="mt-4 grid grid-cols-2 gap-3">
-                    {badges.map((badge) => (
-                      <div
-                        key={badge.label}
-                        className="flex flex-col items-center gap-2 rounded-xl border border-border p-4 text-center transition-colors hover:border-[#2563eb]/30"
-                      >
-                        <div
-                          className={`flex h-10 w-10 items-center justify-center rounded-full ${badge.color} text-white`}
-                        >
-                          <badge.icon className="h-5 w-5" />
-                        </div>
-                        <span className="text-xs font-medium text-foreground leading-tight">
-                          {badge.label}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Aperçu favoris */}
-                <div className="rounded-2xl border border-border bg-card p-6">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-foreground">
-                      Favoris
+              {/* Compas des Envies & Oracle IA */}
+              <div className="grid gap-8 lg:grid-cols-2">
+                 {/* Le Compas des Envies */}
+                 <div className="space-y-6">
+                    <h2 className="text-xl font-bold text-foreground font-display flex items-center gap-2 text-balance">
+                       <Compass className="h-5 w-5 text-[#2563eb]" />
+                       Votre Compas d'Émotion
                     </h2>
-                    <button
-                      onClick={() => setActiveTab("wishlist")}
-                      className="flex items-center gap-1 text-xs font-medium text-[#2563eb] hover:text-[#1d4ed8]"
-                    >
-                      Voir tous <ChevronRight className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                  <div className="mt-4 flex flex-col gap-3">
-                    {wishlist.slice(0, 3).map((item) => (
-                      <div key={item.id} className="flex items-center gap-3">
-                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg">
-                          <Image
-                            src={item.image}
-                            alt={item.name}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="truncate text-sm font-medium text-foreground">
-                            {item.name}
-                          </h4>
-                          <p className="text-xs text-muted-foreground">
-                            {item.location}
-                          </p>
-                        </div>
-                        <p className="text-sm font-bold text-[#2563eb]">
-                          {item.price}€
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Carte voyage placeholder */}
-                <div className="rounded-2xl border border-border bg-card p-6">
-                  <h2 className="text-lg font-semibold text-foreground">
-                    Carte de mes voyages
-                  </h2>
-                  <div className="mt-4 flex aspect-square items-center justify-center rounded-xl bg-muted">
-                    <div className="text-center">
-                      <Globe className="mx-auto h-12 w-12 text-[#2563eb]/30" />
-                      <p className="mt-2 text-sm font-medium text-muted-foreground">
-                        28 pays visités
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Continuez à explorer pour remplir la carte !
-                      </p>
+                    <div className="grid grid-cols-2 gap-5">
+                       {[
+                         { label: "Aventure", icon: Mountain, color: "bg-blue-600", desc: "Défier les sommets" },
+                         { label: "Sérénité", icon: Wind, color: "bg-emerald-500", desc: "Trouver son calme" },
+                         { label: "Culture", icon: Globe, color: "bg-amber-500", desc: "Explorer l'histoire" },
+                         { label: "Evasion", icon: Palmtree, color: "bg-rose-500", desc: "Plages secrètes" }
+                       ].map((mood) => (
+                         <button key={mood.label} className="group relative flex flex-col items-start gap-4 rounded-[2rem] border border-border bg-card p-6 text-left transition-all hover:border-[#2563eb] hover:shadow-2xl hover:shadow-[#2563eb]/10 active:scale-95 overflow-hidden">
+                            <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-muted/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-2xl" />
+                            <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${mood.color} text-white shadow-xl shadow-${mood.color.split('-')[1]}-500/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}>
+                               <mood.icon className="h-7 w-7" />
+                            </div>
+                            <div>
+                               <p className="text-base font-bold text-foreground group-hover:text-[#2563eb] transition-colors">{mood.label}</p>
+                               <p className="text-xs font-medium text-muted-foreground">{mood.desc}</p>
+                            </div>
+                         </button>
+                       ))}
                     </div>
-                  </div>
-                </div>
+                 </div>
+
+                 {/* L'Oracle Tourisia (IA Insight) */}
+                 <div className="relative overflow-hidden rounded-[2.5rem] bg-[#2563eb] p-10 text-white shadow-2xl shadow-[#2563eb]/40 group">
+                    <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-[80px] group-hover:scale-150 transition-transform duration-1000" />
+                    <div className="absolute -left-16 -bottom-16 h-64 w-64 rounded-full bg-[#1e40af] blur-[80px] group-hover:scale-150 transition-transform duration-1000" />
+                    
+                    <div className="relative h-full flex flex-col justify-between space-y-8">
+                       <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-xl border border-white/30 shadow-inner">
+                                <Sparkles className="h-6 w-6 text-amber-200 animate-pulse" />
+                             </div>
+                             <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">Oracle Tourisia</span>
+                          </div>
+                          <Zap className="h-5 w-5 text-white/40" />
+                       </div>
+
+                       <div className="space-y-6">
+                          <p className="text-2xl sm:text-3xl font-display font-semibold leading-tight italic">
+                             "Le vent souffle vers les montagnes de l'Atlas, où l'hospitalité Berbère réchauffera vos soirées étoilées..."
+                          </p>
+                          <div className="flex items-center gap-2">
+                             <div className="h-1 w-12 rounded-full bg-white/30" />
+                             <p className="text-xs text-white/60 font-medium font-mono">
+                                Profil d'Explorateur Alpin détecté
+                             </p>
+                          </div>
+                       </div>
+
+                       <button className="flex items-center gap-3 self-start rounded-2xl bg-white px-8 py-4 text-sm font-bold text-[#2563eb] shadow-xl hover:shadow-white/20 transition-all active:scale-95 group/btn">
+                          Réaliser ce rêve
+                          <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-2" />
+                       </button>
+                    </div>
+                 </div>
               </div>
             </div>
           )}
