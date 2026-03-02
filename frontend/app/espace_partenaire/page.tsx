@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { NotificationBell } from "@/components/notification-bell";
+
 import {
   LayoutDashboard,
   Package,
@@ -36,6 +37,8 @@ import {
   MessageSquare,
   Send,
   ArrowLeft,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -47,6 +50,10 @@ export default function PartnerDashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const [showContractModal, setShowContractModal] = useState(false);
   const [contractHtml, setContractHtml] = useState("");
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   // Form states
   const [formData, setFormData] = useState<any>({});
@@ -630,8 +637,7 @@ export default function PartnerDashboard() {
               {images.map((_, i) => (
                 <div
                   key={i}
-                  className={`h-1.5 w-1.5 rounded-full transition-all ${i === currentIndex ? "bg-white w-3" : "bg-white/50"
-                    }`}
+                  className={`h-1.5 w-1.5 rounded-full transition-all ${i === currentIndex ? "bg-white w-3" : "bg-white/50"}`}
                 />
               ))}
             </div>
@@ -676,7 +682,7 @@ export default function PartnerDashboard() {
                   ? "Validation en attente"
                   : "Compte Validé"}
               </div>
-              <NotificationBell />
+
               <button
                 onClick={handleLogout}
                 className="flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium hover:bg-muted transition-colors text-destructive ml-auto md:ml-0"
@@ -1216,724 +1222,755 @@ export default function PartnerDashboard() {
           )}
 
           {activeTab === "settings" && (
-            <div className="flex flex-col lg:grid lg:grid-cols-4 gap-8 animate-in fade-in duration-500">
-              {/* Settings Tab List - Mobile Friendly */}
-              <div className="lg:col-span-1 border-b lg:border-b-0 lg:border-r border-border pb-4 lg:pb-0 lg:pr-6">
-                <nav className="flex lg:flex-col gap-1 overflow-x-auto scrollbar-hide">
-                  <button
-                    onClick={() => setSettingsSubTab("profile")}
-                    className={`whitespace-nowrap flex-shrink-0 px-4 py-2 rounded-lg transition-colors text-sm font-bold flex items-center gap-2 ${settingsSubTab === "profile"
-                      ? "bg-[#2563eb]/10 text-[#2563eb]"
-                      : "text-muted-foreground hover:bg-muted"
-                      }`}
-                  >
-                    <Building2 className="h-4 w-4" /> Profil Entreprise
-                  </button>
-                  <button
-                    onClick={() => setSettingsSubTab("banking")}
-                    className={`whitespace-nowrap flex-shrink-0 px-4 py-2 rounded-lg transition-colors text-sm font-bold flex items-center gap-2 ${settingsSubTab === "banking"
-                      ? "bg-[#2563eb]/10 text-[#2563eb]"
-                      : "text-muted-foreground hover:bg-muted"
-                      }`}
-                  >
-                    <CreditCard className="h-4 w-4" /> Infos Bancaires
-                  </button>
-                  <button
-                    onClick={fetchContract}
-                    className="whitespace-nowrap flex-shrink-0 px-4 py-2 rounded-lg text-muted-foreground hover:bg-muted text-sm font-medium flex items-center gap-2"
-                  >
-                    <FileText className="h-4 w-4" /> Contrat
-                  </button>
-                </nav>
-              </div>
-
-              {/* Settings Content Area */}
-              <div className="lg:col-span-3">
-                {settingsSubTab === "profile" ? (
-                  <form
-                    onSubmit={handleUpdateProfile}
-                    className="bg-card rounded-2xl border border-border p-8 shadow-sm animate-in fade-in duration-300"
-                  >
-                    <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col gap-8 animate-in fade-in duration-500">
+              {/* Apparence card */}
+              {mounted && (
+                <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#2563eb]/10 text-[#2563eb]">
+                        {resolvedTheme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                      </div>
                       <div>
-                        <h2 className="text-xl font-bold text-foreground">
-                          Profil Entreprise
-                        </h2>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Gérez vos informations publiques et de contact.
+                        <p className="text-sm font-semibold text-foreground">Apparence</p>
+                        <p className="text-xs text-muted-foreground">
+                          {resolvedTheme === 'dark' ? 'Mode sombre activé' : 'Mode clair activé'}
                         </p>
                       </div>
-                      <button
-                        type="submit"
-                        disabled={isLoading}
-                        className="flex items-center gap-2 rounded-xl bg-[#2563eb] px-6 py-2 text-sm font-bold text-white hover:bg-[#1d4ed8] shadow-lg shadow-[#2563eb]/20 transition-all disabled:opacity-50"
-                      >
-                        {isLoading ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Save className="h-4 w-4" />
-                        )}
-                        Enregistrer
-                      </button>
                     </div>
+                    <button
+                      onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none ${resolvedTheme === 'dark' ? 'bg-[#2563eb]' : 'bg-muted'
+                        }`}
+                      role="switch"
+                      aria-checked={resolvedTheme === 'dark'}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ${resolvedTheme === 'dark' ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              )}
 
-                    <div className="grid gap-6 md:grid-cols-2">
-                      <div className="space-y-4">
+              <div className="flex flex-col lg:grid lg:grid-cols-4 gap-8">
+                {/* Settings Tab List - Mobile Friendly */}
+                <div className="lg:col-span-1 border-b lg:border-b-0 lg:border-r border-border pb-4 lg:pb-0 lg:pr-6">
+                  <nav className="flex lg:flex-col gap-1 overflow-x-auto scrollbar-hide">
+                    <button
+                      onClick={() => setSettingsSubTab("profile")}
+                      className={`whitespace-nowrap flex-shrink-0 px-4 py-2 rounded-lg transition-colors text-sm font-bold flex items-center gap-2 ${settingsSubTab === "profile"
+                        ? "bg-[#2563eb]/10 text-[#2563eb]"
+                        : "text-muted-foreground hover:bg-muted"
+                        }`}
+                    >
+                      <Building2 className="h-4 w-4" /> Profil Entreprise
+                    </button>
+                    <button
+                      onClick={() => setSettingsSubTab("banking")}
+                      className={`whitespace-nowrap flex-shrink-0 px-4 py-2 rounded-lg transition-colors text-sm font-bold flex items-center gap-2 ${settingsSubTab === "banking"
+                        ? "bg-[#2563eb]/10 text-[#2563eb]"
+                        : "text-muted-foreground hover:bg-muted"
+                        }`}
+                    >
+                      <CreditCard className="h-4 w-4" /> Infos Bancaires
+                    </button>
+                    <button
+                      onClick={fetchContract}
+                      className="whitespace-nowrap flex-shrink-0 px-4 py-2 rounded-lg text-muted-foreground hover:bg-muted text-sm font-medium flex items-center gap-2"
+                    >
+                      <FileText className="h-4 w-4" /> Contrat
+                    </button>
+                  </nav>
+                </div>
+
+                {/* Settings Content Area */}
+                <div className="lg:col-span-3">
+                  {settingsSubTab === "profile" ? (
+                    <form
+                      onSubmit={handleUpdateProfile}
+                      className="bg-card rounded-2xl border border-border p-8 shadow-sm animate-in fade-in duration-300"
+                    >
+                      <div className="flex items-center justify-between mb-8">
                         <div>
-                          <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
-                            Nom de l'entreprise
-                          </label>
-                          <input
-                            type="text"
-                            value={formData.business_name || ""}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                business_name: e.target.value,
-                              })
-                            }
-                            className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none focus:ring-1 focus:ring-[#2563eb]/20 transition-all"
-                          />
+                          <h2 className="text-xl font-bold text-foreground">
+                            Profil Entreprise
+                          </h2>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Gérez vos informations publiques et de contact.
+                          </p>
                         </div>
-                        <div>
-                          <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
-                            Type d'activité
-                          </label>
-                          <select
-                            value={formData.activity_type || ""}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                activity_type: e.target.value,
-                              })
-                            }
-                            className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none transition-all"
-                          >
-                            <option value="Hôtel">Hôtel / Hébergement</option>
-                            <option value="Agence">Agence de voyage</option>
-                            <option value="Circuit">Circuit touristique</option>
-                            <option value="Location">
-                              Location de voiture
-                            </option>
-                            <option value="Expérience">
-                              Expériences / Activités
-                            </option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
-                            Description
-                          </label>
-                          <textarea
-                            rows={4}
-                            value={formData.description || ""}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                description: e.target.value,
-                              })
-                            }
-                            className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none transition-all"
-                          />
-                        </div>
+                        <button
+                          type="submit"
+                          disabled={isLoading}
+                          className="flex items-center gap-2 rounded-xl bg-[#2563eb] px-6 py-2 text-sm font-bold text-white hover:bg-[#1d4ed8] shadow-lg shadow-[#2563eb]/20 transition-all disabled:opacity-50"
+                        >
+                          {isLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Save className="h-4 w-4" />
+                          )}
+                          Enregistrer
+                        </button>
                       </div>
 
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
-                            Email Professionnel
-                          </label>
-                          <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <input
-                              type="email"
-                              value={formData.business_email || ""}
-                              onChange={(e) =>
-                                setFormData({
-                                  ...formData,
-                                  business_email: e.target.value,
-                                })
-                              }
-                              className="w-full pl-10 rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none transition-all"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
-                            Téléphone Pro
-                          </label>
-                          <div className="relative">
-                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <input
-                              type="tel"
-                              value={formData.business_phone || ""}
-                              onChange={(e) =>
-                                setFormData({
-                                  ...formData,
-                                  business_phone: e.target.value,
-                                })
-                              }
-                              className="w-full pl-10 rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none transition-all"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
-                            Site Web
-                          </label>
-                          <div className="relative">
-                            <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <div className="grid gap-6 md:grid-cols-2">
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
+                              Nom de l'entreprise
+                            </label>
                             <input
                               type="text"
-                              value={formData.website || ""}
+                              value={formData.business_name || ""}
                               onChange={(e) =>
                                 setFormData({
                                   ...formData,
-                                  website: e.target.value,
+                                  business_name: e.target.value,
                                 })
                               }
-                              placeholder="https://..."
-                              className="w-full pl-10 rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none transition-all"
+                              className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none focus:ring-1 focus:ring-[#2563eb]/20 transition-all"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
+                              Type d'activité
+                            </label>
+                            <select
+                              value={formData.activity_type || ""}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  activity_type: e.target.value,
+                                })
+                              }
+                              className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none transition-all"
+                            >
+                              <option value="Hôtel">Hôtel / Hébergement</option>
+                              <option value="Agence">Agence de voyage</option>
+                              <option value="Circuit">Circuit touristique</option>
+                              <option value="Location">
+                                Location de voiture
+                              </option>
+                              <option value="Expérience">
+                                Expériences / Activités
+                              </option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
+                              Description
+                            </label>
+                            <textarea
+                              rows={4}
+                              value={formData.description || ""}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  description: e.target.value,
+                                })
+                              }
+                              className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none transition-all"
                             />
                           </div>
                         </div>
+
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
+                              Email Professionnel
+                            </label>
+                            <div className="relative">
+                              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <input
+                                type="email"
+                                value={formData.business_email || ""}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    business_email: e.target.value,
+                                  })
+                                }
+                                className="w-full pl-10 rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none transition-all"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
+                              Téléphone Pro
+                            </label>
+                            <div className="relative">
+                              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <input
+                                type="tel"
+                                value={formData.business_phone || ""}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    business_phone: e.target.value,
+                                  })
+                                }
+                                className="w-full pl-10 rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none transition-all"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
+                              Site Web
+                            </label>
+                            <div className="relative">
+                              <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <input
+                                type="text"
+                                value={formData.website || ""}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    website: e.target.value,
+                                  })
+                                }
+                                placeholder="https://..."
+                                className="w-full pl-10 rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none transition-all"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
+                              Adresse
+                            </label>
+                            <div className="relative">
+                              <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                              <textarea
+                                rows={2}
+                                value={formData.address || ""}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    address: e.target.value,
+                                  })
+                                }
+                                className="w-full pl-10 rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none transition-all"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </form>
+                  ) : (
+                    <form
+                      onSubmit={handleUpdateProfile}
+                      className="bg-card rounded-2xl border border-border p-8 shadow-sm animate-in fade-in duration-300"
+                    >
+                      <div className="flex items-center justify-between mb-8">
                         <div>
-                          <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
-                            Adresse
-                          </label>
-                          <div className="relative">
-                            <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <h2 className="text-xl font-bold text-foreground">
+                            Informations Bancaires
+                          </h2>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Gérez vos coordonnées pour les reversements.
+                          </p>
+                        </div>
+                        <button
+                          type="submit"
+                          disabled={isLoading}
+                          className="flex items-center gap-2 rounded-xl bg-[#2563eb] px-6 py-2 text-sm font-bold text-white hover:bg-[#1d4ed8] shadow-lg shadow-[#2563eb]/20 transition-all disabled:opacity-50"
+                        >
+                          {isLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Save className="h-4 w-4" />
+                          )}
+                          Enregistrer
+                        </button>
+                      </div>
+
+                      <div className="grid gap-6 md:grid-cols-2">
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
+                              Titulaire du compte
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.account_holder || ""}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  account_holder: e.target.value,
+                                })
+                              }
+                              placeholder="Nom complet ou société"
+                              className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none transition-all"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
+                              Nom de la banque
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.bank_name || ""}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  bank_name: e.target.value,
+                                })
+                              }
+                              className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none transition-all"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
+                              IBAN / RIB
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.iban || ""}
+                              onChange={(e) =>
+                                setFormData({ ...formData, iban: e.target.value })
+                              }
+                              placeholder="BJ00 0000 0000 0000 0000"
+                              className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm font-mono focus:border-[#2563eb] focus:outline-none transition-all"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
+                              Numéro Mobile Money
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.mobile_money_number || ""}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  mobile_money_number: e.target.value,
+                                })
+                              }
+                              placeholder="+229 00 00 00 00"
+                              className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none transition-all"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
+                              Devise de paiement
+                            </label>
+                            <select
+                              value={formData.currency || "XOF"}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  currency: e.target.value,
+                                })
+                              }
+                              className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none transition-all"
+                            >
+                              <option value="XOF">FCFA (XOF)</option>
+                              <option value="EUR">Euro (EUR)</option>
+                              <option value="USD">Dollar (USD)</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
+                              Adresse de facturation
+                            </label>
                             <textarea
                               rows={2}
-                              value={formData.address || ""}
+                              value={formData.billing_address || ""}
                               onChange={(e) =>
                                 setFormData({
                                   ...formData,
-                                  address: e.target.value,
+                                  billing_address: e.target.value,
                                 })
                               }
-                              className="w-full pl-10 rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none transition-all"
+                              className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none transition-all"
                             />
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </form>
-                ) : (
-                  <form
-                    onSubmit={handleUpdateProfile}
-                    className="bg-card rounded-2xl border border-border p-8 shadow-sm animate-in fade-in duration-300"
-                  >
-                    <div className="flex items-center justify-between mb-8">
-                      <div>
-                        <h2 className="text-xl font-bold text-foreground">
-                          Informations Bancaires
-                        </h2>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Gérez vos coordonnées pour les reversements.
-                        </p>
-                      </div>
-                      <button
-                        type="submit"
-                        disabled={isLoading}
-                        className="flex items-center gap-2 rounded-xl bg-[#2563eb] px-6 py-2 text-sm font-bold text-white hover:bg-[#1d4ed8] shadow-lg shadow-[#2563eb]/20 transition-all disabled:opacity-50"
-                      >
-                        {isLoading ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Save className="h-4 w-4" />
-                        )}
-                        Enregistrer
-                      </button>
-                    </div>
-
-                    <div className="grid gap-6 md:grid-cols-2">
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
-                            Titulaire du compte
-                          </label>
-                          <input
-                            type="text"
-                            value={formData.account_holder || ""}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                account_holder: e.target.value,
-                              })
-                            }
-                            placeholder="Nom complet ou société"
-                            className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none transition-all"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
-                            Nom de la banque
-                          </label>
-                          <input
-                            type="text"
-                            value={formData.bank_name || ""}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                bank_name: e.target.value,
-                              })
-                            }
-                            className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none transition-all"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
-                            IBAN / RIB
-                          </label>
-                          <input
-                            type="text"
-                            value={formData.iban || ""}
-                            onChange={(e) =>
-                              setFormData({ ...formData, iban: e.target.value })
-                            }
-                            placeholder="BJ00 0000 0000 0000 0000"
-                            className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm font-mono focus:border-[#2563eb] focus:outline-none transition-all"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
-                            Numéro Mobile Money
-                          </label>
-                          <input
-                            type="text"
-                            value={formData.mobile_money_number || ""}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                mobile_money_number: e.target.value,
-                              })
-                            }
-                            placeholder="+229 00 00 00 00"
-                            className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none transition-all"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
-                            Devise de paiement
-                          </label>
-                          <select
-                            value={formData.currency || "XOF"}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                currency: e.target.value,
-                              })
-                            }
-                            className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none transition-all"
-                          >
-                            <option value="XOF">FCFA (XOF)</option>
-                            <option value="EUR">Euro (EUR)</option>
-                            <option value="USD">Dollar (USD)</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
-                            Adresse de facturation
-                          </label>
-                          <textarea
-                            rows={2}
-                            value={formData.billing_address || ""}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                billing_address: e.target.value,
-                              })
-                            }
-                            className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm focus:border-[#2563eb] focus:outline-none transition-all"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </form>
-                )}
+                    </form>
+                  )}
+                </div>
               </div>
             </div>
           )}
         </div>
-      </div>
-      <Footer />
+        <Footer />
 
-      {/* Contract Modal */}
-      {
-        showContractModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-0 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white w-full sm:max-w-4xl h-full sm:h-[85vh] sm:rounded-3xl overflow-hidden flex flex-col shadow-2xl">
-              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-white sticky top-0">
-                <div>
-                  <h3 className="text-xl font-bold text-foreground">
-                    Contrat de prestation de services
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Document officiel généré pour {partner.business_name}
-                  </p>
+        {/* Contract Modal */}
+        {
+          showContractModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-0 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="bg-white w-full sm:max-w-4xl h-full sm:h-[85vh] sm:rounded-3xl overflow-hidden flex flex-col shadow-2xl">
+                <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-white sticky top-0">
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground">
+                      Contrat de prestation de services
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Document officiel généré pour {partner.business_name}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleDownloadPdf}
+                      className="flex items-center gap-2 rounded-xl bg-[#2563eb] px-4 py-2 text-xs font-bold text-white hover:bg-[#1d4ed8] shadow-lg shadow-[#2563eb]/20 transition-all"
+                    >
+                      <Download className="h-4 w-4" />
+                      Télécharger PDF
+                    </button>
+                    <button
+                      onClick={() => setShowContractModal(false)}
+                      className="p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors"
+                    >
+                      <X className="h-6 w-6" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex-1 overflow-y-auto p-4 sm:p-8 md:p-12 bg-gray-50">
+                  <div
+                    className="bg-white p-6 sm:p-12 shadow-sm mx-auto"
+                    dangerouslySetInnerHTML={{ __html: contractHtml }}
+                  />
+                </div>
+              </div>
+            </div>
+          )
+        }
+
+        {/* Modern Add Offer Modal */}
+        {
+          showOfferModal && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-0 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="bg-white w-full sm:max-w-3xl h-full sm:h-[90vh] sm:rounded-3xl overflow-hidden flex flex-col shadow-2xl">
+                <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-white sticky top-0 z-10">
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
+                      <Plus className="h-5 w-5 text-[#2563eb]" />
+                      Nouvelle Publication
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Remplissez les détails de votre offre pour la mettre en ligne.
+                    </p>
+                  </div>
                   <button
-                    onClick={handleDownloadPdf}
-                    className="flex items-center gap-2 rounded-xl bg-[#2563eb] px-4 py-2 text-xs font-bold text-white hover:bg-[#1d4ed8] shadow-lg shadow-[#2563eb]/20 transition-all"
-                  >
-                    <Download className="h-4 w-4" />
-                    Télécharger PDF
-                  </button>
-                  <button
-                    onClick={() => setShowContractModal(false)}
+                    onClick={() => setShowOfferModal(false)}
                     className="p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors"
                   >
                     <X className="h-6 w-6" />
                   </button>
                 </div>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4 sm:p-8 md:p-12 bg-gray-50">
-                <div
-                  className="bg-white p-6 sm:p-12 shadow-sm mx-auto"
-                  dangerouslySetInnerHTML={{ __html: contractHtml }}
-                />
-              </div>
-            </div>
-          </div>
-        )
-      }
 
-      {/* Modern Add Offer Modal */}
-      {
-        showOfferModal && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-0 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white w-full sm:max-w-3xl h-full sm:h-[90vh] sm:rounded-3xl overflow-hidden flex flex-col shadow-2xl">
-              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-white sticky top-0 z-10">
-                <div>
-                  <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
-                    <Plus className="h-5 w-5 text-[#2563eb]" />
-                    Nouvelle Publication
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Remplissez les détails de votre offre pour la mettre en ligne.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowOfferModal(false)}
-                  className="p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors"
-                >
-                  <X className="h-6 w-6" />
-                </button>
-              </div>
+                <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-8">
+                  <form onSubmit={handleSubmitOffer} className="space-y-8">
+                    {/* Basic Info Section */}
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-bold text-foreground border-l-4 border-[#2563eb] pl-3">
+                        Informations Générales
+                      </h4>
+                      <div className="grid gap-6 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-muted-foreground uppercase">
+                            Type d'offre
+                          </label>
+                          <select
+                            value={newOffer.type}
+                            onChange={(e) =>
+                              setNewOffer({ ...newOffer, type: e.target.value })
+                            }
+                            className="w-full rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none transition-all"
+                          >
+                            <option value="herbergement">Hébergement</option>
+                            <option value="transport">Transport</option>
+                            <option value="activite">Activité</option>
+                            <option value="circuit">Circuit</option>
+                            <option value="autre">Autre</option>
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-muted-foreground uppercase">
+                            Titre de la publication *
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Ex: Villa de luxe au bord de mer"
+                            required
+                            value={newOffer.title}
+                            onChange={(e) =>
+                              setNewOffer({ ...newOffer, title: e.target.value })
+                            }
+                            className="w-full rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none transition-all"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-muted-foreground uppercase">
+                          Description
+                        </label>
+                        <textarea
+                          rows={4}
+                          placeholder="Décrivez votre offre en détail..."
+                          value={newOffer.description}
+                          onChange={(e) =>
+                            setNewOffer({ ...newOffer, description: e.target.value })
+                          }
+                          className="w-full rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none transition-all"
+                        />
+                      </div>
+                    </div>
 
-              <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-8">
-                <form onSubmit={handleSubmitOffer} className="space-y-8">
-                  {/* Basic Info Section */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-bold text-foreground border-l-4 border-[#2563eb] pl-3">
-                      Informations Générales
-                    </h4>
+                    {/* Pricing & Location */}
                     <div className="grid gap-6 md:grid-cols-2">
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-muted-foreground uppercase">
-                          Type d'offre
+                          Lieu *
                         </label>
-                        <select
-                          value={newOffer.type}
-                          onChange={(e) =>
-                            setNewOffer({ ...newOffer, type: e.target.value })
-                          }
-                          className="w-full rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none transition-all"
-                        >
-                          <option value="herbergement">Hébergement</option>
-                          <option value="transport">Transport</option>
-                          <option value="activite">Activité</option>
-                          <option value="circuit">Circuit</option>
-                          <option value="autre">Autre</option>
-                        </select>
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <input
+                            type="text"
+                            placeholder="Ville, Quartier, Pays"
+                            required
+                            value={newOffer.location}
+                            onChange={(e) =>
+                              setNewOffer({ ...newOffer, location: e.target.value })
+                            }
+                            className="w-full pl-10 rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none transition-all"
+                          />
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-muted-foreground uppercase">
-                          Titre de la publication *
+                          Prix *
                         </label>
-                        <input
-                          type="text"
-                          placeholder="Ex: Villa de luxe au bord de mer"
-                          required
-                          value={newOffer.title}
-                          onChange={(e) =>
-                            setNewOffer({ ...newOffer, title: e.target.value })
-                          }
-                          className="w-full rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none transition-all"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-muted-foreground uppercase">
-                        Description
-                      </label>
-                      <textarea
-                        rows={4}
-                        placeholder="Décrivez votre offre en détail..."
-                        value={newOffer.description}
-                        onChange={(e) =>
-                          setNewOffer({ ...newOffer, description: e.target.value })
-                        }
-                        className="w-full rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Pricing & Location */}
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-muted-foreground uppercase">
-                        Lieu *
-                      </label>
-                      <div className="relative">
-                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <input
-                          type="text"
-                          placeholder="Ville, Quartier, Pays"
-                          required
-                          value={newOffer.location}
-                          onChange={(e) =>
-                            setNewOffer({ ...newOffer, location: e.target.value })
-                          }
-                          className="w-full pl-10 rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none transition-all"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-muted-foreground uppercase">
-                        Prix *
-                      </label>
-                      <div className="flex gap-2">
-                        <input
-                          type="number"
-                          placeholder="0.00"
-                          required
-                          value={newOffer.price}
-                          onChange={(e) =>
-                            setNewOffer({ ...newOffer, price: e.target.value })
-                          }
-                          className="flex-1 rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none transition-all"
-                        />
-                        <select
-                          value={newOffer.currency}
-                          onChange={(e) =>
-                            setNewOffer({ ...newOffer, currency: e.target.value })
-                          }
-                          className="w-24 rounded-xl border border-border bg-muted/30 px-2 py-3 text-sm font-bold focus:border-[#2563eb] outline-none transition-all"
-                        >
-                          <option value="CFA">CFA</option>
-                          <option value="EUR">EUR</option>
-                          <option value="USD">USD</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Media Section */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-bold text-foreground border-l-4 border-[#2563eb] pl-3 flex items-center justify-between">
-                      Médias (Images & Vidéo)
-                      <span className="text-[10px] text-muted-foreground font-normal">
-                        Max 5 images · 1 vidéo
-                      </span>
-                    </h4>
-
-                    {/* Image Grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                      {newOffer.images.map((img, idx) => (
-                        <div
-                          key={idx}
-                          className="group relative aspect-square rounded-xl border border-border bg-muted overflow-hidden"
-                        >
-                          <img
-                            src={`${process.env.NEXT_PUBLIC_API_URL}${img}`}
-                            className="w-full h-full object-cover"
-                            alt={`Preview ${idx + 1}`}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeImage(idx)}
-                            className="absolute top-1 right-1 p-1.5 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-100"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ))}
-                      {newOffer.images.length < 5 && (
-                        <label className="aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-muted/50 transition-all hover:border-[#2563eb]/50">
-                          <Upload className="h-5 w-5 text-muted-foreground" />
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase">
-                            Ajouter
-                          </span>
+                        <div className="flex gap-2">
                           <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => handleMediaUpload(e, "image")}
-                            disabled={isUploading}
+                            type="number"
+                            placeholder="0.00"
+                            required
+                            value={newOffer.price}
+                            onChange={(e) =>
+                              setNewOffer({ ...newOffer, price: e.target.value })
+                            }
+                            className="flex-1 rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none transition-all"
                           />
-                        </label>
-                      )}
+                          <select
+                            value={newOffer.currency}
+                            onChange={(e) =>
+                              setNewOffer({ ...newOffer, currency: e.target.value })
+                            }
+                            className="w-24 rounded-xl border border-border bg-muted/30 px-2 py-3 text-sm font-bold focus:border-[#2563eb] outline-none transition-all"
+                          >
+                            <option value="CFA">CFA</option>
+                            <option value="EUR">EUR</option>
+                            <option value="USD">USD</option>
+                          </select>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Video Upload */}
-                    <div className="space-y-3">
-                      <label className="text-xs font-bold text-muted-foreground uppercase block">
-                        Vidéo promotionnelle
-                      </label>
-                      <div className="relative">
-                        {newOffer.video ? (
-                          <div className="flex items-center justify-between p-4 rounded-xl border border-[#2563eb]/30 bg-[#2563eb]/5">
-                            <div className="flex items-center gap-3">
-                              <Video className="h-5 w-5 text-[#2563eb]" />
-                              <span className="text-sm font-medium truncate max-w-[200px]">
-                                Vidéo chargée
-                              </span>
-                            </div>
+                    {/* Media Section */}
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-bold text-foreground border-l-4 border-[#2563eb] pl-3 flex items-center justify-between">
+                        Médias (Images & Vidéo)
+                        <span className="text-[10px] text-muted-foreground font-normal">
+                          Max 5 images · 1 vidéo
+                        </span>
+                      </h4>
+
+                      {/* Image Grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                        {newOffer.images.map((img, idx) => (
+                          <div
+                            key={idx}
+                            className="group relative aspect-square rounded-xl border border-border bg-muted overflow-hidden"
+                          >
+                            <img
+                              src={`${process.env.NEXT_PUBLIC_API_URL}${img}`}
+                              className="w-full h-full object-cover"
+                              alt={`Preview ${idx + 1}`}
+                            />
                             <button
                               type="button"
-                              onClick={() =>
-                                setNewOffer({ ...newOffer, video: "" })
-                              }
-                              className="text-xs font-bold text-red-500 hover:underline"
+                              onClick={() => removeImage(idx)}
+                              className="absolute top-1 right-1 p-1.5 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-100"
                             >
-                              Supprimer
+                              <X className="h-3 w-3" />
                             </button>
                           </div>
-                        ) : (
-                          <label className="flex items-center justify-center gap-3 w-full p-6 rounded-xl border-2 border-dashed border-border hover:bg-muted/50 transition-all cursor-pointer">
-                            <Video className="h-5 w-5 text-muted-foreground" />
-                            <div className="text-left">
-                              <p className="text-sm font-bold">Charger une vidéo</p>
-                              <p className="text-xs text-muted-foreground">
-                                MP4, WebM ou MOV (Max 50MB)
-                              </p>
-                            </div>
+                        ))}
+                        {newOffer.images.length < 5 && (
+                          <label className="aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-muted/50 transition-all hover:border-[#2563eb]/50">
+                            <Upload className="h-5 w-5 text-muted-foreground" />
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase">
+                              Ajouter
+                            </span>
                             <input
                               type="file"
-                              accept="video/*"
+                              accept="image/*"
                               className="hidden"
-                              onChange={(e) => handleMediaUpload(e, "video")}
+                              onChange={(e) => handleMediaUpload(e, "image")}
                               disabled={isUploading}
                             />
                           </label>
                         )}
-                        {isUploading && (
-                          <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center rounded-xl">
-                            <Loader2 className="h-6 w-6 animate-spin text-[#2563eb]" />
-                          </div>
-                        )}
+                      </div>
+
+                      {/* Video Upload */}
+                      <div className="space-y-3">
+                        <label className="text-xs font-bold text-muted-foreground uppercase block">
+                          Vidéo promotionnelle
+                        </label>
+                        <div className="relative">
+                          {newOffer.video ? (
+                            <div className="flex items-center justify-between p-4 rounded-xl border border-[#2563eb]/30 bg-[#2563eb]/5">
+                              <div className="flex items-center gap-3">
+                                <Video className="h-5 w-5 text-[#2563eb]" />
+                                <span className="text-sm font-medium truncate max-w-[200px]">
+                                  Vidéo chargée
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setNewOffer({ ...newOffer, video: "" })
+                                }
+                                className="text-xs font-bold text-red-500 hover:underline"
+                              >
+                                Supprimer
+                              </button>
+                            </div>
+                          ) : (
+                            <label className="flex items-center justify-center gap-3 w-full p-6 rounded-xl border-2 border-dashed border-border hover:bg-muted/50 transition-all cursor-pointer">
+                              <Video className="h-5 w-5 text-muted-foreground" />
+                              <div className="text-left">
+                                <p className="text-sm font-bold">Charger une vidéo</p>
+                                <p className="text-xs text-muted-foreground">
+                                  MP4, WebM ou MOV (Max 50MB)
+                                </p>
+                              </div>
+                              <input
+                                type="file"
+                                accept="video/*"
+                                className="hidden"
+                                onChange={(e) => handleMediaUpload(e, "video")}
+                                disabled={isUploading}
+                              />
+                            </label>
+                          )}
+                          {isUploading && (
+                            <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center rounded-xl">
+                              <Loader2 className="h-6 w-6 animate-spin text-[#2563eb]" />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Actions */}
-                  <div className="flex gap-4 pt-4 sticky bottom-0 bg-white border-t border-border mt-8 pt-6">
-                    <button
-                      type="button"
-                      onClick={() => setShowOfferModal(false)}
-                      className="flex-1 rounded-xl border border-border py-4 text-sm font-bold hover:bg-muted transition-all"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isLoading || isUploading}
-                      className="flex-[2] rounded-xl bg-[#2563eb] py-4 text-sm font-bold text-white hover:bg-[#1d4ed8] shadow-lg shadow-[#2563eb]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
-                      {isLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Check className="h-4 w-4" />
-                      )}
-                      Publier l'offre
-                    </button>
-                  </div>
-                </form>
+                    {/* Actions */}
+                    <div className="flex gap-4 pt-4 sticky bottom-0 bg-white border-t border-border mt-8 pt-6">
+                      <button
+                        type="button"
+                        onClick={() => setShowOfferModal(false)}
+                        className="flex-1 rounded-xl border border-border py-4 text-sm font-bold hover:bg-muted transition-all"
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isLoading || isUploading}
+                        className="flex-[2] rounded-xl bg-[#2563eb] py-4 text-sm font-bold text-white hover:bg-[#1d4ed8] shadow-lg shadow-[#2563eb]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {isLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Check className="h-4 w-4" />
+                        )}
+                        Publier l'offre
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </div>
             </div>
-          </div>
-        )
-      }
-      {/* Delete Confirmation Modal */}
-      {
-        showDeleteModal && (
-          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl p-6 text-center">
-              <div className="h-16 w-16 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
-                <AlertTriangle className="h-8 w-8" />
-              </div>
-              <h3 className="text-xl font-bold text-foreground mb-2">Supprimer cette offre ?</h3>
-              <p className="text-sm text-muted-foreground mb-8">
-                Cette action est irréversible. Toutes les données liées à cette publication seront définitivement supprimées.
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowDeleteModal(false)}
-                  className="flex-1 rounded-xl border border-border py-3 text-sm font-bold hover:bg-muted transition-all"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={handleDeleteOffer}
-                  disabled={isLoading}
-                  className="flex-1 rounded-xl bg-red-500 py-3 text-sm font-bold text-white hover:bg-red-600 shadow-lg shadow-red-500/20 transition-all flex items-center justify-center gap-2"
-                >
-                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                  Supprimer
-                </button>
-              </div>
-            </div>
-          </div>
-        )
-      }
-
-      {/* Details Modal */}
-
-      {/* Folder Selection Modal */}
-      {
-        pendingImportOffers && (
-          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl p-6 text-center">
-              <div className="h-16 w-16 rounded-full bg-blue-100 text-[#2563eb] flex items-center justify-center mx-auto mb-4">
-                <ImageIcon className="h-8 w-8" />
-              </div>
-              <h3 className="text-xl font-bold text-foreground mb-2">Dossier des images</h3>
-              <p className="text-sm text-muted-foreground mb-8">
-                Fichier Excel validé avec succès ({pendingImportOffers.length} offre(s) trouvées).
-                <br /><br />
-                Veuillez maintenant sélectionner le dossier sur votre ordinateur contenant toutes les images évoquées dans le fichier.
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setPendingImportOffers(null);
-                    const el = document.getElementById("excel-upload") as HTMLInputElement;
-                    if (el) el.value = '';
-                  }}
-                  className="flex-1 rounded-xl border border-border py-3 text-sm font-bold hover:bg-muted transition-all"
-                >
-                  Annuler l'import
-                </button>
-                <button
-                  onClick={() => document.getElementById("folder-upload")?.click()}
-                  className="flex-1 rounded-xl bg-[#2563eb] py-3 text-sm font-bold text-white hover:bg-[#1d4ed8] shadow-lg transition-all"
-                >
-                  Sélectionner
-                </button>
+          )
+        }
+        {/* Delete Confirmation Modal */}
+        {
+          showDeleteModal && (
+            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl p-6 text-center">
+                <div className="h-16 w-16 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
+                  <AlertTriangle className="h-8 w-8" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground mb-2">Supprimer cette offre ?</h3>
+                <p className="text-sm text-muted-foreground mb-8">
+                  Cette action est irréversible. Toutes les données liées à cette publication seront définitivement supprimées.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowDeleteModal(false)}
+                    className="flex-1 rounded-xl border border-border py-3 text-sm font-bold hover:bg-muted transition-all"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={handleDeleteOffer}
+                    disabled={isLoading}
+                    className="flex-1 rounded-xl bg-red-500 py-3 text-sm font-bold text-white hover:bg-red-600 shadow-lg shadow-red-500/20 transition-all flex items-center justify-center gap-2"
+                  >
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                    Supprimer
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )
-      }
+          )
+        }
 
-      {
-        showDetailsModal && selectedOfferDetails && (
+        {/* Details Modal */}
+
+        {/* Folder Selection Modal */}
+        {
+          pendingImportOffers && (
+            <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl p-6 text-center">
+                <div className="h-16 w-16 rounded-full bg-blue-100 text-[#2563eb] flex items-center justify-center mx-auto mb-4">
+                  <ImageIcon className="h-8 w-8" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground mb-2">Dossier des images</h3>
+                <p className="text-sm text-muted-foreground mb-8">
+                  Fichier Excel validé avec succès ({pendingImportOffers.length} offre(s) trouvées).
+                  <br /><br />
+                  Veuillez maintenant sélectionner le dossier sur votre ordinateur contenant toutes les images évoquées dans le fichier.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setPendingImportOffers(null);
+                      const el = document.getElementById("excel-upload") as HTMLInputElement;
+                      if (el) el.value = '';
+                    }}
+                    className="flex-1 rounded-xl border border-border py-3 text-sm font-bold hover:bg-muted transition-all"
+                  >
+                    Annuler l'import
+                  </button>
+                  <button
+                    onClick={() => document.getElementById("folder-upload")?.click()}
+                    className="flex-1 rounded-xl bg-[#2563eb] py-3 text-sm font-bold text-white hover:bg-[#1d4ed8] shadow-lg transition-all"
+                  >
+                    Sélectionner
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        }
+
+        {showDetailsModal && selectedOfferDetails && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-0 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white w-full sm:max-w-4xl h-full sm:h-[90vh] sm:rounded-3xl overflow-hidden flex flex-col shadow-2xl">
               <div className="relative h-64 sm:h-96">
@@ -2046,7 +2083,7 @@ export default function PartnerDashboard() {
             </div>
           </div>
         )}
+      </div>
     </div>
-
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import { useTheme } from "next-themes";
 import { useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
@@ -44,6 +45,8 @@ import {
   Send,
   ArrowLeft,
   Notebook as Journal,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { ItineraryList } from "@/components/itinerary/itinerary-list";
 
@@ -240,6 +243,10 @@ function ProfileContent() {
   const [partners, setPartners] = useState<any[]>([]);
   const [showNewConvModal, setShowNewConvModal] = useState(false);
   const [selectedPartnerId, setSelectedPartnerId] = useState<number | null>(null);
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     fetchUserData();
@@ -1544,7 +1551,40 @@ function ProfileContent() {
                 <p className="mt-1 text-sm text-muted-foreground">
                   Gérez vos préférences et informations personnelles.
                 </p>
-                <div className="mt-6 flex flex-col gap-3">
+
+                {/* ── Apparence ── */}
+                {mounted && (
+                  <div className="mt-6 rounded-xl border border-border bg-card p-5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#2563eb]/10 text-[#2563eb]">
+                          {theme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">Apparence</p>
+                          <p className="text-xs text-muted-foreground">
+                            {theme === 'dark' ? 'Mode sombre activé' : 'Mode clair activé'}
+                          </p>
+                        </div>
+                      </div>
+                      {/* Toggle switch */}
+                      <button
+                        onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none ${resolvedTheme === 'dark' ? 'bg-[#2563eb]' : 'bg-muted'
+                          }`}
+                        role="switch"
+                        aria-checked={resolvedTheme === 'dark'}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ${resolvedTheme === 'dark' ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-4 flex flex-col gap-3">
                   {settingsSections.map((section) => (
                     <button
                       key={section.label}

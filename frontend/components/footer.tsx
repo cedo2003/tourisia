@@ -1,5 +1,7 @@
 import { Plane, Globe } from "lucide-react";
 import Image from "next/image";
+import { useTheme } from "next-themes";
+import { useState, useEffect } from "react";
 
 const footerLinks = {
   Services: ["Vols", "Hotels et Sejours", "Experiences", "Location de voiture"],
@@ -13,6 +15,13 @@ const footerLinks = {
 };
 
 export function Footer() {
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <footer className="border-t border-border bg-card">
       <div className="mx-auto max-w-7xl px-4 py-12 lg:px-8">
@@ -21,7 +30,7 @@ export function Footer() {
           <div>
             <a href="#" className="flex items-center gap-2">
               <Image
-                src="/images/Logo-Tourisia--Principal.png"
+                src={mounted && resolvedTheme === "dark" ? "/images/Logo-Tourisia-Blanc.png" : "/images/Logo-Tourisia--Principal.png"}
                 alt="Traveler"
                 width={160}
                 height={60}

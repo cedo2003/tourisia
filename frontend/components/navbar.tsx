@@ -1,12 +1,14 @@
 "use client";
 
-import { Menu, X, User, LogOut, Loader2 } from "lucide-react";
+import { Menu, X, User, LogOut, Loader2, Sun, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { NotificationBell } from "@/components/notification-bell";
+import { LanguageSelector } from "@/components/language-selector";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +36,10 @@ export function Navbar() {
   });
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const pathname = usePathname();
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -108,7 +114,7 @@ export function Navbar() {
           {/* Logo */}
           <a href="/" className="flex items-center gap-2">
             <Image
-              src="/images/Logo-Tourisia--Principal.png"
+              src={mounted && resolvedTheme === "dark" ? "/images/Logo-Tourisia-Blanc.png" : "/images/Logo-Tourisia--Principal.png"}
               alt="Traveler"
               width={160}
               height={60}
@@ -181,8 +187,22 @@ export function Navbar() {
                 </Link>
               ))}
 
+            <div className="flex items-center gap-4">
+              <LanguageSelector />
+            </div>
+
             {user ? (
               <div className="flex items-center gap-4 ml-2 pl-4 border-l border-border">
+                {/* Theme toggle */}
+                {mounted && (
+                  <button
+                    onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+                    title={resolvedTheme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
+                  >
+                    {resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                  </button>
+                )}
                 <NotificationBell />
                 <Link
                   href="/profile"
@@ -245,8 +265,18 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Mobile: bell + menu button */}
+          {/* Mobile: bell + lang + menu button */}
           <div className="flex items-center gap-4 md:hidden">
+            <LanguageSelector />
+            {user && mounted && (
+              <button
+                onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+                title={resolvedTheme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+              >
+                {resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </button>
+            )}
             {user && <NotificationBell />}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}

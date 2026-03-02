@@ -237,7 +237,7 @@ export default function OffersPage() {
         </section>
 
         {/* Search & filters */}
-        <section className="sticky top-[64px] z-40 border-b border-border bg-card/95 backdrop-blur-sm">
+        <section className="sticky top-[64px] z-30 border-b border-border bg-card/95 backdrop-blur-sm">
           <div className="mx-auto max-w-7xl px-3 py-3 sm:px-4 sm:py-4 lg:px-8">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div className="flex flex-col gap-3 md:flex-row md:items-center flex-1">

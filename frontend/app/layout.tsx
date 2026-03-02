@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
+import { ThemeProvider } from '@/components/theme-provider'
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -22,6 +23,7 @@ export const viewport: Viewport = {
 import { Toaster } from "@/components/ui/sonner"
 import { GoogleOAuthProvider } from "@react-oauth/google"
 import { AIAssistant } from "@/components/ai-assistant"
+import { GoogleTranslateScript } from "@/components/google-translate-script"
 
 export default function RootLayout({
   children,
@@ -34,12 +36,15 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <GoogleOAuthProvider clientId={googleClientId}>
-          {children}
-          <Toaster richColors />
-          <AIAssistant />
-          <Analytics />
-        </GoogleOAuthProvider>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange={false}>
+          <GoogleOAuthProvider clientId={googleClientId}>
+            {children}
+            <Toaster richColors />
+            <AIAssistant />
+            <GoogleTranslateScript />
+            <Analytics />
+          </GoogleOAuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
