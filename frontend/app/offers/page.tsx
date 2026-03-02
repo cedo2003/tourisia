@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
@@ -60,7 +60,7 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-export default function OffersPage() {
+function OffersPageContent() {
   const router = useRouter();
   const [offers, setOffers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -675,5 +675,17 @@ export default function OffersPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function OffersPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-[#2563eb]" />
+      </div>
+    }>
+      <OffersPageContent />
+    </Suspense>
   );
 }
