@@ -12,6 +12,7 @@ import {
     ArrowRight
 } from "lucide-react";
 import { toast } from "sonner";
+import { PaymentSimulationModal } from "@/components/payment-simulation-modal";
 
 interface Itinerary {
     id: string;
@@ -37,6 +38,7 @@ export const ItineraryList = () => {
     const [items, setItems] = useState<ItineraryItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [itemsLoading, setItemsLoading] = useState(false);
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
     const fetchItineraries = async () => {
         const userStr = localStorage.getItem("user");
@@ -307,7 +309,7 @@ export const ItineraryList = () => {
                                                 toast.error("Veuillez vous connecter pour faire une réservation.");
                                                 return;
                                             }
-                                            toast.info("La réservation groupée sera bientôt disponible. Contactez les partenaires individuellement pour réserver.");
+                                            setIsPaymentModalOpen(true);
                                         }}
                                         className="flex items-center gap-2 bg-white text-blue-600 font-bold px-6 py-3 rounded-xl hover:bg-blue-50 active:scale-95 transition-all shadow-lg text-sm whitespace-nowrap"
                                     >
@@ -316,6 +318,45 @@ export const ItineraryList = () => {
                                         <ArrowRight className="h-4 w-4" />
                                     </button>
                                 </div>
+
+                                <PaymentSimulationModal
+                                    isOpen={isPaymentModalOpen}
+                                    onClose={() => setIsPaymentModalOpen(false)}
+                                    onSuccess={async () => {
+                                        setIsPaymentModalOpen(false);
+                                        const userStr = localStorage.getItem("user");
+                                        const user = userStr ? JSON.parse(userStr) : null;
+
+                                        // Simulate booking each item in the carnet
+                                        try {
+                                            let hasError = false;
+                                            for (const item of items) {
+                                                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}offers/book_offer.php`, {
+                                                    method: "POST",
+                                                    headers: { "Content-Type": "application/json" },
+                                                    body: JSON.stringify({
+                                                        user_id: user.id,
+                                                        offer_id: item.id,
+                                                        itinerary_id: selectedItinerary.id
+                                                    }),
+                                                });
+                                                if (!response.ok) hasError = true;
+                                            }
+                                            if (hasError) {
+                                                toast.info("Certaines offres étaient déjà réservées, elles ont été regroupées dans votre carnet.");
+                                            } else {
+                                                toast.success("Toutes les offres du carnet ont été réservées avec succès !");
+                                            }
+                                            // Optional: trigger a refresh in the profile page via a custom event or shared state
+                                            window.dispatchEvent(new CustomEvent('reservationsUpdated'));
+                                        } catch (err) {
+                                            console.error("Error during carnet reservation simulation", err);
+                                        }
+                                    }}
+                                    amount={total.toLocaleString('fr-DZ')}
+                                    currency={currency}
+                                    offerTitle={selectedItinerary.title}
+                                />
                             </div>
                         );
                     })()}

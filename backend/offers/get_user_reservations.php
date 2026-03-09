@@ -17,9 +17,10 @@ if (!$user_id) {
 
 try {
     $stmt = $pdo->prepare("
-        SELECT r.*, o.title, o.location, o.price, o.currency, o.images, o.type
+        SELECT r.*, o.title, o.location, o.price, o.currency, o.images, o.type, i.title as carnet_title
         FROM reservations r
         JOIN offers o ON r.offer_id = o.id
+        LEFT JOIN itineraries i ON r.itinerary_id = i.id
         WHERE r.user_id = ?
         ORDER BY r.created_at DESC
     ");

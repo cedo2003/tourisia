@@ -35,16 +35,30 @@ try {
     }
 
     // Check for existing reservation
-    $checkStmt = $pdo->prepare("SELECT id FROM reservations WHERE user_id = ? AND offer_id = ? AND status != 'cancelled'");
+    $checkStmt = $pdo->prepare("SELECT id, itinerary_id FROM reservations WHERE user_id = ? AND offer_id = ? AND status != 'cancelled'");
     $checkStmt->execute([$data->user_id, $data->offer_id]);
-    if ($checkStmt->fetch()) {
+    $existing = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+    $itinerary_id = isset($data->itinerary_id) ? $data->itinerary_id : null;
+
+    if ($existing) {
+        // If it exists but has no itinerary_id and we WANT to add one
+        if (!$existing['itinerary_id'] && $itinerary_id) {
+            $updateStmt = $pdo->prepare("UPDATE reservations SET itinerary_id = ? WHERE id = ?");
+            if ($updateStmt->execute([$itinerary_id, $existing['id']])) {
+                echo json_encode(["message" => "Réservation mise à jour avec le carnet !"]);
+                exit;
+            }
+        }
+
         http_response_code(400);
         echo json_encode(["message" => "Vous avez déjà une réservation en cours pour cette offre."]);
         exit;
     }
 
-    $stmt = $pdo->prepare("INSERT INTO reservations (user_id, offer_id, status) VALUES (?, ?, 'pending')");
-    if ($stmt->execute([$data->user_id, $data->offer_id])) {
+    $itinerary_id = isset($data->itinerary_id) ? $data->itinerary_id : null;
+    $stmt = $pdo->prepare("INSERT INTO reservations (user_id, offer_id, itinerary_id, status) VALUES (?, ?, ?, 'pending')");
+    if ($stmt->execute([$data->user_id, $data->offer_id, $itinerary_id])) {
         echo json_encode(["message" => "Réservation effectuée avec succès !"]);
     } else {
         http_response_code(500);

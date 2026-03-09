@@ -25,6 +25,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toast } from "sonner";
 import { AddToItineraryButton } from "@/components/itinerary/add-to-itinerary-button";
+import { PaymentSimulationModal } from "@/components/payment-simulation-modal";
 
 // Categories are now standard
 const categories = [
@@ -76,6 +77,8 @@ function OffersPageContent() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [userPartnerId, setUserPartnerId] = useState<number | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isBooking, setIsBooking] = useState(false);
 
   const searchParams = useSearchParams();
 
@@ -174,9 +177,46 @@ function OffersPageContent() {
     }
   };
 
-  const handleBooking = async (offerId: number) => {
-    toast.info("La réservation directe est temporairement désactivée. Veuillez contacter le partenaire par message.");
-    return;
+  const handleBooking = async (offer: any) => {
+    if (!user) {
+      toast.error("Veuillez vous connecter pour réserver.");
+      return;
+    }
+
+    // Safety check: is it the user's own offer?
+    if (offer.partner_id === userPartnerId) {
+      toast.error("Vous ne pouvez pas réserver votre propre offre.");
+      return;
+    }
+
+    setSelectedOffer(offer);
+    setShowPaymentModal(true);
+  };
+
+  const confirmBooking = async () => {
+    if (!selectedOffer || !user) return;
+
+    setIsBooking(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}offers/book_offer.php`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: user.id, offer_id: selectedOffer.id }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(data.message);
+        fetchUserReservations(user.id);
+        setShowPaymentModal(false);
+        setShowDetailModal(false);
+      } else {
+        toast.error(data.message || "Erreur lors de la réservation.");
+      }
+    } catch (err) {
+      toast.error("Erreur de connexion au serveur.");
+    } finally {
+      setIsBooking(false);
+    }
   };
 
   const filtered = offers
@@ -637,10 +677,11 @@ function OffersPageContent() {
                     ) : (
                       <>
                         <button
-                          onClick={() => handleBooking(selectedOffer.id)}
-                          className="w-full py-3 sm:py-4 rounded-lg sm:rounded-xl text-[12px] sm:text-sm font-bold transition-all flex items-center justify-center gap-2 group bg-gray-100 text-gray-400 cursor-not-allowed"
+                          onClick={() => handleBooking(selectedOffer)}
+                          disabled={isBooking}
+                          className="w-full py-3 sm:py-4 rounded-lg sm:rounded-xl text-[12px] sm:text-sm font-bold transition-all flex items-center justify-center gap-2 group bg-white text-[#2563eb] hover:bg-white/90 shadow-lg shadow-black/10 active:scale-95 disabled:opacity-50"
                         >
-                          Réserver
+                          {isBooking ? <Loader2 className="h-4 w-4 animate-spin" /> : "Réserver"}
                         </button>
 
                         {selectedOffer.selected_plan !== "Gratuit" && (
@@ -673,6 +714,17 @@ function OffersPageContent() {
             </div>
           </div>
         </div>
+      )}
+      {/* Payment Simulation Modal */}
+      {selectedOffer && (
+        <PaymentSimulationModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          onSuccess={confirmBooking}
+          amount={selectedOffer.price}
+          currency={selectedOffer.currency}
+          offerTitle={selectedOffer.title}
+        />
       )}
     </div>
   );

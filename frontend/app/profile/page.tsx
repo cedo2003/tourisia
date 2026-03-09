@@ -38,6 +38,8 @@ import {
   Share2,
   Loader2,
   Play,
+  CheckCircle2,
+  ChevronDown,
   ArrowRight,
   ChevronLeft,
   Trash2,
@@ -53,6 +55,7 @@ import {
   Palmtree,
   Zap,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ItineraryList } from "@/components/itinerary/itinerary-list";
 
 /* ─── DONNÉES MOCK (exemples) ─── */
@@ -184,6 +187,7 @@ const settingsSections = [
 const tabs = [
   { id: "overview", label: "Aperçu" },
   { id: "itineraries", label: "Mes Carnets" },
+  { id: "reservations", label: "Mes réservations" },
   { id: "wishlist", label: "Favoris" },
   { id: "reviews", label: "Avis" },
   { id: "messagerie", label: "Messagerie" },
@@ -210,6 +214,129 @@ export default function ProfilePage() {
     </Suspense>
   );
 }
+
+const ReservationCard = ({ res, setSelectedOffer, setShowDetailModal, confirmDelete, getFileUrl }: any) => (
+  <div
+    onClick={() => {
+      setSelectedOffer(res);
+      setShowDetailModal(true);
+    }}
+    className="group overflow-hidden rounded-xl border border-border bg-card transition-all hover:shadow-lg cursor-pointer h-full flex flex-col"
+  >
+    <div className="relative aspect-[16/10] overflow-hidden shrink-0">
+      <Image
+        src={res.images && res.images.length > 0 ? getFileUrl(res.images[0]) : "/images/placeholder.jpg"}
+        alt={res.title}
+        fill
+        className="object-cover transition-transform duration-500 group-hover:scale-105"
+      />
+      <span
+        className={`absolute top-3 right-3 rounded-full px-2.5 py-1 text-xs font-medium text-white shadow-sm ${res.status === 'confirmed' ? 'bg-green-500' : res.status === 'cancelled' ? 'bg-red-500' : 'bg-amber-500'
+          }`}
+      >
+        {res.status === 'confirmed' ? 'Confirmé' : res.status === 'cancelled' ? 'Annulé' : 'En attente'}
+      </span>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          confirmDelete(res.id);
+        }}
+        className="absolute top-3 left-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-destructive shadow-md hover:bg-white hover:scale-110 transition-all"
+        aria-label="Supprimer la réservation"
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
+    </div>
+    <div className="p-4 flex flex-col flex-1">
+      <h3 className="font-semibold text-foreground truncate">
+        {res.title}
+      </h3>
+      <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+        <MapPin className="h-3 w-3" />
+        {res.location}
+      </div>
+      <div className="mt-auto pt-3 border-t border-border mt-3 flex items-center justify-between">
+        <div className="flex items-baseline gap-1">
+          <span className="text-lg font-bold text-[#2563eb]">{parseInt(res.price).toLocaleString()}</span>
+          <span className="text-xs font-medium text-muted-foreground uppercase">{res.currency}</span>
+        </div>
+        <div className="text-[10px] font-bold text-[#2563eb] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+          Détails <ChevronRight className="h-3 w-3" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const CarnetReservationCard = ({ group, setSelectedOffer, setShowDetailModal, confirmDelete, getFileUrl }: any) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const totalAmount = group.items.reduce((sum: number, item: any) => sum + (parseInt(item.price) || 0), 0);
+  const currency = group.items[0]?.currency || "DZD";
+
+  return (
+    <div className="overflow-hidden rounded-[2.5rem] border border-blue-100 bg-white shadow-xl dark:border-blue-900/30 dark:bg-slate-900/50 transition-all hover:shadow-blue-500/10">
+      {/* Header / Summary Card */}
+      <div
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="p-6 cursor-pointer group/header"
+      >
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-500/30 group-hover/header:scale-110 transition-transform">
+              <Journal className="h-7 w-7" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-xl font-black text-foreground">{group.title || "Réservation de Carnet"}</h3>
+                <span className="bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-200 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest">Carnet</span>
+              </div>
+              <p className="text-xs text-muted-foreground font-medium mt-1">{group.items.length} destination{group.items.length > 1 ? 's' : ''} incluse{group.items.length > 1 ? 's' : ''}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-6 ml-auto">
+            <div className="text-right">
+              <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-0.5">Montant total</p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-black text-blue-600">{totalAmount.toLocaleString()}</span>
+                <span className="text-xs font-black text-blue-500 uppercase">{currency}</span>
+              </div>
+            </div>
+            <div className={`h-10 w-10 flex items-center justify-center rounded-full bg-muted transition-transform duration-300 ${isExpanded ? 'rotate-180 bg-blue-50 text-blue-600' : ''}`}>
+              <ChevronDown className="h-5 w-5" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Expanded Items */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden bg-muted/30 border-t border-border"
+          >
+            <div className="p-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 animate-in fade-in slide-in-from-top-4 duration-500">
+              {group.items.map((res: any) => (
+                <ReservationCard
+                  key={res.id}
+                  res={res}
+                  setSelectedOffer={setSelectedOffer}
+                  setShowDetailModal={setShowDetailModal}
+                  confirmDelete={confirmDelete}
+                  getFileUrl={getFileUrl}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 
 function ProfileContent() {
   const searchParams = useSearchParams();
@@ -432,6 +559,14 @@ function ProfileContent() {
       if (interval) clearInterval(interval);
     };
   }, [activeTab, user, selectedConversation?.partner_id]);
+
+  useEffect(() => {
+    const handleRefresh = () => {
+      if (user) fetchReservations(user.id);
+    };
+    window.addEventListener('reservationsUpdated', handleRefresh);
+    return () => window.removeEventListener('reservationsUpdated', handleRefresh);
+  }, [user]);
 
   const openConversation = async (conv: any) => {
     setSelectedConversation(conv);
@@ -934,18 +1069,18 @@ function ProfileContent() {
                           </p>
                         </div>
                         <div className="flex flex-col gap-4 pt-6 border-t border-border/50">
-                           <div className="group flex items-center gap-3 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
-                              <div className="h-9 w-9 rounded-xl bg-[#2563eb]/10 flex items-center justify-center transition-transform group-hover:scale-110">
-                                <Mail className="h-4 w-4 text-[#2563eb]" />
-                              </div>
-                              {user.email}
-                           </div>
-                           <div className="group flex items-center gap-3 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
-                              <div className="h-9 w-9 rounded-xl bg-[#2563eb]/10 flex items-center justify-center transition-transform group-hover:scale-110">
-                                <Phone className="h-4 w-4 text-[#2563eb]" />
-                              </div>
-                              {user.phone || "Non renseigné"}
-                           </div>
+                          <div className="group flex items-center gap-3 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+                            <div className="h-9 w-9 rounded-xl bg-[#2563eb]/10 flex items-center justify-center transition-transform group-hover:scale-110">
+                              <Mail className="h-4 w-4 text-[#2563eb]" />
+                            </div>
+                            {user.email}
+                          </div>
+                          <div className="group flex items-center gap-3 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+                            <div className="h-9 w-9 rounded-xl bg-[#2563eb]/10 flex items-center justify-center transition-transform group-hover:scale-110">
+                              <Phone className="h-4 w-4 text-[#2563eb]" />
+                            </div>
+                            {user.phone || "Non renseigné"}
+                          </div>
                         </div>
                       </div>
                     )}
@@ -956,36 +1091,36 @@ function ProfileContent() {
                 <div className="lg:col-span-2 space-y-6">
                   <div className="flex items-center justify-between mb-2">
                     <h2 className="text-xl font-bold text-foreground font-display flex items-center gap-2">
-                       <Sparkles className="h-5 w-5 text-amber-500 animate-pulse" />
-                       Carnet de Rêves
+                      <Sparkles className="h-5 w-5 text-amber-500 animate-pulse" />
+                      Carnet de Rêves
                     </h2>
                     <span className="text-[10px] font-bold uppercase tracking-widest text-[#2563eb] bg-[#2563eb]/5 px-3 py-1 rounded-full">Vision Board</span>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-5 auto-rows-[130px]">
                     <div className="row-span-2 group relative overflow-hidden rounded-[2.5rem] border-4 border-card shadow-2xl transition-all hover:scale-[1.02] active:scale-95">
-                       <Image src="/images/santorini.jpg" alt="Santorin" fill className="object-cover transition-transform duration-1000 group-hover:scale-110" />
-                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                       <div className="absolute bottom-6 left-6 text-white transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">
-                          <p className="text-[10px] font-bold uppercase tracking-tighter opacity-70">Grèce</p>
-                          <p className="text-sm font-bold">L'Éclat Blanc</p>
-                       </div>
+                      <Image src="/images/santorini.jpg" alt="Santorin" fill className="object-cover transition-transform duration-1000 group-hover:scale-110" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      <div className="absolute bottom-6 left-6 text-white transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">
+                        <p className="text-[10px] font-bold uppercase tracking-tighter opacity-70">Grèce</p>
+                        <p className="text-sm font-bold">L'Éclat Blanc</p>
+                      </div>
                     </div>
                     <div className="row-span-1 group relative overflow-hidden rounded-[2.5rem] border-4 border-card shadow-xl transition-all hover:scale-[1.02] active:scale-95">
-                       <Image src="/images/amazone.jpg" alt="Amazonie" fill className="object-cover transition-transform duration-1000 group-hover:scale-110" />
-                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      <Image src="/images/amazone.jpg" alt="Amazonie" fill className="object-cover transition-transform duration-1000 group-hover:scale-110" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     </div>
                     <div className="row-span-2 group relative overflow-hidden rounded-[2.5rem] border-4 border-card shadow-2xl transition-all hover:scale-[1.02] active:scale-95">
-                       <Image src="/images/ganvie.jpg" alt="Ganvié" fill className="object-cover transition-transform duration-1000 group-hover:scale-110" />
-                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                       <div className="absolute bottom-6 left-6 text-white transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">
-                          <p className="text-[10px] font-bold uppercase tracking-tighter opacity-70">Bénin</p>
-                          <p className="text-sm font-bold">Venise d'Afrique</p>
-                       </div>
+                      <Image src="/images/ganvie.jpg" alt="Ganvié" fill className="object-cover transition-transform duration-1000 group-hover:scale-110" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      <div className="absolute bottom-6 left-6 text-white transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">
+                        <p className="text-[10px] font-bold uppercase tracking-tighter opacity-70">Bénin</p>
+                        <p className="text-sm font-bold">Venise d'Afrique</p>
+                      </div>
                     </div>
                     <div className="row-span-1 group relative overflow-hidden rounded-[2.5rem] border-4 border-card shadow-xl transition-all hover:scale-[1.02] active:scale-95">
-                       <Image src="/images/porte.jpg" alt="Inspiration" fill className="object-cover transition-transform duration-1000 group-hover:scale-110" />
-                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      <Image src="/images/porte.jpg" alt="Inspiration" fill className="object-cover transition-transform duration-1000 group-hover:scale-110" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     </div>
                   </div>
                 </div>
@@ -993,67 +1128,67 @@ function ProfileContent() {
 
               {/* Compas des Envies & Oracle IA */}
               <div className="grid gap-8 lg:grid-cols-2">
-                 {/* Le Compas des Envies */}
-                 <div className="space-y-6">
-                    <h2 className="text-xl font-bold text-foreground font-display flex items-center gap-2 text-balance">
-                       <Compass className="h-5 w-5 text-[#2563eb]" />
-                       Votre Compas d'Émotion
-                    </h2>
-                    <div className="grid grid-cols-2 gap-5">
-                       {[
-                         { label: "Aventure", icon: Mountain, color: "bg-blue-600", desc: "Défier les sommets" },
-                         { label: "Sérénité", icon: Wind, color: "bg-emerald-500", desc: "Trouver son calme" },
-                         { label: "Culture", icon: Globe, color: "bg-amber-500", desc: "Explorer l'histoire" },
-                         { label: "Evasion", icon: Palmtree, color: "bg-rose-500", desc: "Plages secrètes" }
-                       ].map((mood) => (
-                         <button key={mood.label} className="group relative flex flex-col items-start gap-4 rounded-[2rem] border border-border bg-card p-6 text-left transition-all hover:border-[#2563eb] hover:shadow-2xl hover:shadow-[#2563eb]/10 active:scale-95 overflow-hidden">
-                            <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-muted/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-2xl" />
-                            <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${mood.color} text-white shadow-xl shadow-${mood.color.split('-')[1]}-500/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}>
-                               <mood.icon className="h-7 w-7" />
-                            </div>
-                            <div>
-                               <p className="text-base font-bold text-foreground group-hover:text-[#2563eb] transition-colors">{mood.label}</p>
-                               <p className="text-xs font-medium text-muted-foreground">{mood.desc}</p>
-                            </div>
-                         </button>
-                       ))}
+                {/* Le Compas des Envies */}
+                <div className="space-y-6">
+                  <h2 className="text-xl font-bold text-foreground font-display flex items-center gap-2 text-balance">
+                    <Compass className="h-5 w-5 text-[#2563eb]" />
+                    Votre Compas d'Émotion
+                  </h2>
+                  <div className="grid grid-cols-2 gap-5">
+                    {[
+                      { label: "Aventure", icon: Mountain, color: "bg-blue-600", desc: "Défier les sommets" },
+                      { label: "Sérénité", icon: Wind, color: "bg-emerald-500", desc: "Trouver son calme" },
+                      { label: "Culture", icon: Globe, color: "bg-amber-500", desc: "Explorer l'histoire" },
+                      { label: "Evasion", icon: Palmtree, color: "bg-rose-500", desc: "Plages secrètes" }
+                    ].map((mood) => (
+                      <button key={mood.label} className="group relative flex flex-col items-start gap-4 rounded-[2rem] border border-border bg-card p-6 text-left transition-all hover:border-[#2563eb] hover:shadow-2xl hover:shadow-[#2563eb]/10 active:scale-95 overflow-hidden">
+                        <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-muted/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-2xl" />
+                        <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${mood.color} text-white shadow-xl shadow-${mood.color.split('-')[1]}-500/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}>
+                          <mood.icon className="h-7 w-7" />
+                        </div>
+                        <div>
+                          <p className="text-base font-bold text-foreground group-hover:text-[#2563eb] transition-colors">{mood.label}</p>
+                          <p className="text-xs font-medium text-muted-foreground">{mood.desc}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* L'Oracle Tourisia (IA Insight) */}
+                <div className="relative overflow-hidden rounded-[2.5rem] bg-[#2563eb] p-10 text-white shadow-2xl shadow-[#2563eb]/40 group">
+                  <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-[80px] group-hover:scale-150 transition-transform duration-1000" />
+                  <div className="absolute -left-16 -bottom-16 h-64 w-64 rounded-full bg-[#1e40af] blur-[80px] group-hover:scale-150 transition-transform duration-1000" />
+
+                  <div className="relative h-full flex flex-col justify-between space-y-8">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-xl border border-white/30 shadow-inner">
+                          <Sparkles className="h-6 w-6 text-amber-200 animate-pulse" />
+                        </div>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">Oracle Tourisia</span>
+                      </div>
+                      <Zap className="h-5 w-5 text-white/40" />
                     </div>
-                 </div>
 
-                 {/* L'Oracle Tourisia (IA Insight) */}
-                 <div className="relative overflow-hidden rounded-[2.5rem] bg-[#2563eb] p-10 text-white shadow-2xl shadow-[#2563eb]/40 group">
-                    <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-[80px] group-hover:scale-150 transition-transform duration-1000" />
-                    <div className="absolute -left-16 -bottom-16 h-64 w-64 rounded-full bg-[#1e40af] blur-[80px] group-hover:scale-150 transition-transform duration-1000" />
-                    
-                    <div className="relative h-full flex flex-col justify-between space-y-8">
-                       <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-xl border border-white/30 shadow-inner">
-                                <Sparkles className="h-6 w-6 text-amber-200 animate-pulse" />
-                             </div>
-                             <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">Oracle Tourisia</span>
-                          </div>
-                          <Zap className="h-5 w-5 text-white/40" />
-                       </div>
-
-                       <div className="space-y-6">
-                          <p className="text-2xl sm:text-3xl font-display font-semibold leading-tight italic">
-                             "Le vent souffle vers les montagnes de l'Atlas, où l'hospitalité Berbère réchauffera vos soirées étoilées..."
-                          </p>
-                          <div className="flex items-center gap-2">
-                             <div className="h-1 w-12 rounded-full bg-white/30" />
-                             <p className="text-xs text-white/60 font-medium font-mono">
-                                Profil d'Explorateur Alpin détecté
-                             </p>
-                          </div>
-                       </div>
-
-                       <button className="flex items-center gap-3 self-start rounded-2xl bg-white px-8 py-4 text-sm font-bold text-[#2563eb] shadow-xl hover:shadow-white/20 transition-all active:scale-95 group/btn">
-                          Réaliser ce rêve
-                          <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-2" />
-                       </button>
+                    <div className="space-y-6">
+                      <p className="text-2xl sm:text-3xl font-display font-semibold leading-tight italic">
+                        "Le vent souffle vers les montagnes de l'Atlas, où l'hospitalité Berbère réchauffera vos soirées étoilées..."
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <div className="h-1 w-12 rounded-full bg-white/30" />
+                        <p className="text-xs text-white/60 font-medium font-mono">
+                          Profil d'Explorateur Alpin détecté
+                        </p>
+                      </div>
                     </div>
-                 </div>
+
+                    <button className="flex items-center gap-3 self-start rounded-2xl bg-white px-8 py-4 text-sm font-bold text-[#2563eb] shadow-xl hover:shadow-white/20 transition-all active:scale-95 group/btn">
+                      Réaliser ce rêve
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-2" />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -1098,57 +1233,52 @@ function ProfileContent() {
                     </Link>
                   </div>
                 ) : (
-                  <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {reservations.map((res) => (
-                      <div
-                        key={res.id}
-                        onClick={() => {
-                          setSelectedOffer(res);
-                          setShowDetailModal(true);
-                        }}
-                        className="group overflow-hidden rounded-xl border border-border bg-card transition-all hover:shadow-lg cursor-pointer"
-                      >
-                        <div className="relative aspect-[16/10] overflow-hidden">
-                          <Image
-                            src={res.images && res.images.length > 0 ? getFileUrl(res.images[0]) : "/images/placeholder.jpg"}
-                            alt={res.title}
-                            fill
-                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  <div className="mt-6 flex flex-col gap-8">
+                    {/* Standalone Reservations */}
+                    {reservations.filter(r => !r.itinerary_id).length > 0 && (
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {reservations.filter(r => !r.itinerary_id).map((res) => (
+                          <ReservationCard
+                            key={res.id}
+                            res={res}
+                            setSelectedOffer={setSelectedOffer}
+                            setShowDetailModal={setShowDetailModal}
+                            confirmDelete={confirmDelete}
+                            getFileUrl={getFileUrl}
                           />
-                          <span
-                            className={`absolute top-3 right-3 rounded-full px-2.5 py-1 text-xs font-medium text-white ${res.status === 'confirmed' ? 'bg-green-500' : res.status === 'cancelled' ? 'bg-red-500' : 'bg-amber-500'
-                              }`}
-                          >
-                            {res.status === 'confirmed' ? 'Confirmé' : res.status === 'cancelled' ? 'Annulé' : 'En attente'}
-                          </span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              confirmDelete(res.id);
-                            }}
-                            className="absolute top-3 left-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-destructive shadow-md hover:bg-white hover:scale-110 transition-all"
-                            aria-label="Supprimer la réservation"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Carnet Groups */}
+                    {Object.values(reservations.reduce((acc: any, res) => {
+                      if (res.itinerary_id) {
+                        if (!acc[res.itinerary_id]) acc[res.itinerary_id] = { title: res.carnet_title, items: [] };
+                        acc[res.itinerary_id].items.push(res);
+                      }
+                      return acc;
+                    }, {})).map((group: any, idx: number) => (
+                      <div key={idx} className="space-y-4 rounded-[2rem] border border-blue-100 bg-blue-50/30 p-6 dark:border-blue-900/30 dark:bg-blue-900/10">
+                        <div className="flex items-center gap-3 px-2">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-500/20">
+                            <Journal className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-lg text-foreground">{group.title || "Mon voyage groupé"}</h3>
+                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">{group.items.length} offres réservées dans ce carnet</p>
+                          </div>
                         </div>
-                        <div className="p-4">
-                          <h3 className="font-semibold text-foreground truncate">
-                            {res.title}
-                          </h3>
-                          <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                            <MapPin className="h-3 w-3" />
-                            {res.location}
-                          </div>
-                          <div className="mt-2 flex items-center justify-between border-t border-border pt-3">
-                            <div className="flex items-baseline gap-1">
-                              <span className="text-lg font-bold text-[#2563eb]">{res.price}</span>
-                              <span className="text-xs font-medium text-muted-foreground uppercase">{res.currency}</span>
-                            </div>
-                            <button className="text-[10px] sm:text-xs font-bold text-[#2563eb] hover:underline">
-                              Voir détails
-                            </button>
-                          </div>
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                          {group.items.map((res: any) => (
+                            <ReservationCard
+                              key={res.id}
+                              res={res}
+                              setSelectedOffer={setSelectedOffer}
+                              setShowDetailModal={setShowDetailModal}
+                              confirmDelete={confirmDelete}
+                              getFileUrl={getFileUrl}
+                            />
+                          ))}
                         </div>
                       </div>
                     ))}
